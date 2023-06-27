@@ -7,17 +7,17 @@ module "vpc" {
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
 
-  azs             = var.azs
-  private_subnets = var.private_subnets
-  public_subnets  = var.public_subnets
+  azs                 = var.azs
+  private_subnets     = var.private_subnets
+  public_subnets      = var.public_subnets
   database_subnets    = var.database_subnets
   elasticache_subnets = var.elasticache_subnets
-  intra_subnets = var.intra_subnets
+  intra_subnets       = var.intra_subnets
 
-  create_database_subnet_group           = var.create_database_subnet_group
-  create_elasticache_subnet_group        = var.create_elasticache_subnet_group
-  create_database_subnet_route_table     = var.create_database_subnet_route_table
-  one_nat_gateway_per_az = var.one_nat_gateway_per_az
+  create_database_subnet_group       = var.create_database_subnet_group
+  create_elasticache_subnet_group    = var.create_elasticache_subnet_group
+  create_database_subnet_route_table = var.create_database_subnet_route_table
+  one_nat_gateway_per_az             = var.one_nat_gateway_per_az
 
 
   enable_nat_gateway = var.enable_nat_gateway
@@ -33,7 +33,7 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
 
-  cluster_endpoint_public_access  = var.eks_cluster_endpoint_public_access
+  cluster_endpoint_public_access = var.eks_cluster_endpoint_public_access
 
   cluster_addons = var.eks_cluster_addons
 
@@ -81,7 +81,7 @@ module "redis_sg" {
 }
 
 module "db" {
-  source  = "terraform-aws-modules/rds/aws"
+  source = "terraform-aws-modules/rds/aws"
 
   identifier = var.database_identifier
 
@@ -103,8 +103,8 @@ module "db" {
 
   # Enhanced Monitoring - see example for details on how to create the role
   # by yourself, in case you don't want to create it automatically
-  monitoring_interval = var.db_monitoring_interval
-  monitoring_role_name = var.db_monitoring_role_name
+  monitoring_interval    = var.db_monitoring_interval
+  monitoring_role_name   = var.db_monitoring_role_name
   create_monitoring_role = var.db_create_monitoring_role
 
   tags = var.default_tags
@@ -122,7 +122,7 @@ module "db" {
   deletion_protection = var.db_deletion_protection
 
   parameters = var.db_parameters
-  options = var.db_options
+  options    = var.db_options
 }
 
 module "memory_db" {
@@ -151,11 +151,11 @@ module "memory_db" {
   parameter_group_name        = var.redis_parameter_group_name
   parameter_group_description = var.redis_parameter_group_description
   parameter_group_family      = var.redis_parameter_group_family
-  parameter_group_parameters = var.redis_parameter_group_parameters
-  parameter_group_tags = var.redis_parameter_group_tags
+  parameter_group_parameters  = var.redis_parameter_group_parameters
+  parameter_group_tags        = var.redis_parameter_group_tags
 
   # Subnet group
-  create_subnet_group = var.redis_create_subnet_group
+  create_subnet_group      = var.redis_create_subnet_group
   subnet_group_name        = var.redis_subnet_group_name
   subnet_group_description = var.redis_subnet_group_description
   subnet_ids               = module.vpc.elasticache_subnets

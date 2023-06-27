@@ -14,8 +14,8 @@ variable "region" {
 
 ## Tags
 variable "default_tags" {
-  type        = map(string)
-  default     = {
+  type = map(string)
+  default = {
     ManagedBy   = "Terraform"
     Environment = "Development"
     Product     = "Tower"
@@ -293,7 +293,7 @@ variable "db_parameters" {
 ## DB Options
 variable "db_options" {
   type = list(object({
-    option_name     = string
+    option_name = string
     option_settings = list(object({
       name  = string
       value = string
@@ -422,7 +422,7 @@ variable "redis_snapshot_window" {
 
 ## Redis Users
 variable "redis_users" {
-  type        = map(object({
+  type = map(object({
     user_name     = string
     access_string = string
     passwords     = list(string)
@@ -465,7 +465,7 @@ variable "redis_parameter_group_family" {
 }
 
 variable "redis_parameter_group_parameters" {
-  type        = list(object({
+  type = list(object({
     name  = string
     value = string
   }))
