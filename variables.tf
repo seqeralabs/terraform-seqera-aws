@@ -247,6 +247,12 @@ variable "db_username" {
   description = "The username for the database."
 }
 
+variable "db_password" {
+  type        = string
+  default     = "my_db_password"
+  description = "Password for the master DB user. Note that this may show up in logs, and it will be stored in the state file. The password provided will not be used if `manage_master_user_password` is set to true."
+}
+
 variable "db_port" {
   type        = string
   default     = "3306"
