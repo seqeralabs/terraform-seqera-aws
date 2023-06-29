@@ -191,7 +191,7 @@ variable "tower_service_account_name" {
 ## EKS Enable IRSA
 variable "eks_enable_irsa" {
   type = bool 
-  default = string 
+  default = true 
   description = "Determines whether to create an OpenID Connect Provider for EKS to enable IRSA"
 }
 
