@@ -176,22 +176,37 @@ module "iam_policy" {
   policy = var.tower_service_account_iam_policy
 }
 
-module "tower_irsa" {
-  source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+# module "tower_irsa" {
+#   source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name   = "TowerIAMRole"
+#   role_name   = "TowerIAMRole"
 
-  attach_vpc_cni_policy = true
-  vpc_cni_enable_ipv4   = true
+#   attach_vpc_cni_policy = true
+#   vpc_cni_enable_ipv4   = true
 
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
-    }
-  }
+#   oidc_providers = {
+#     main = {
+#       provider_arn               = module.eks.oidc_provider_arn
+#       namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
+#     }
+#   }
 
-  tags = {
-    Name = "TowerIAMRole"
+#   role_policy_arns = {
+#     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+#     additional           = module.iam_policy.arn
+#   }
+
+#   tags = {
+#     Name = "TowerIAMRole"
+#   }
+# }
+
+module "tower_irsa_iam_eks_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-eks-role"
+
+  role_name = "TowerIAMRole"
+
+  cluster_service_accounts = {
+    "cluster1" = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
   }
 }
