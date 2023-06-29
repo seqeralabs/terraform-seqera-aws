@@ -37,6 +37,8 @@ module "eks" {
 
   cluster_addons = var.eks_cluster_addons
 
+  enable_irsa = var.eks_enable_irsa
+
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
@@ -162,4 +164,34 @@ module "memory_db" {
   subnet_ids               = module.vpc.elasticache_subnets
 
   tags = var.default_tags
+}
+
+module "iam_policy" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+
+  name        = "TowerIAMPolicy"
+  path        = "/"
+  description = "This policy provide the permissions needed for Tower service account to be able to interact with the required AWS services."
+
+  policy = var.tower_service_account_iam_policy
+}
+
+module "tower_irsa" {
+  source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+
+  role_name   = "TowerIAMRole"
+
+  attach_vpc_cni_policy = true
+  vpc_cni_enable_ipv4   = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
+    }
+  }
+
+  tags = {
+    Name = "TowerIAMRole"
+  }
 }

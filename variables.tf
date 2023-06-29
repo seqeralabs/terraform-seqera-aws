@@ -74,6 +74,127 @@ variable "eks_managed_node_group_min_size" {
   description = "The minimum size of the EKS managed node group."
 }
 
+## Tower Service Account IRSA IAM Policy
+variable "tower_service_account_iam_policy" {
+  type = string 
+  default = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Sid": "TowerForge0",
+          "Effect": "Allow",
+          "Action": [
+              "ssm:GetParameters",
+              "iam:CreateInstanceProfile",
+              "iam:DeleteInstanceProfile",
+              "iam:GetRole",
+              "iam:RemoveRoleFromInstanceProfile",
+              "iam:CreateRole",
+              "iam:DeleteRole",
+              "iam:AttachRolePolicy",
+              "iam:PutRolePolicy",
+              "iam:AddRoleToInstanceProfile",
+              "iam:PassRole",
+              "iam:DetachRolePolicy",
+              "iam:ListAttachedRolePolicies",
+              "iam:DeleteRolePolicy",
+              "iam:ListRolePolicies",
+              "iam:TagRole",
+              "iam:TagInstanceProfile",
+              "batch:CreateComputeEnvironment",
+              "batch:DescribeComputeEnvironments",
+              "batch:CreateJobQueue",
+              "batch:DescribeJobQueues",
+              "batch:UpdateComputeEnvironment",
+              "batch:DeleteComputeEnvironment",
+              "batch:UpdateJobQueue",
+              "batch:DeleteJobQueue",
+              "batch:TagResource",
+              "fsx:DeleteFileSystem",
+              "fsx:DescribeFileSystems",
+              "fsx:CreateFileSystem",
+              "fsx:TagResource",
+              "ec2:DescribeSecurityGroups",
+              "ec2:DescribeAccountAttributes",
+              "ec2:DescribeSubnets",
+              "ec2:DescribeLaunchTemplates",
+              "ec2:DescribeLaunchTemplateVersions", 
+              "ec2:CreateLaunchTemplate",
+              "ec2:DeleteLaunchTemplate",
+              "ec2:DescribeKeyPairs",
+              "ec2:DescribeVpcs",
+              "ec2:DescribeInstanceTypeOfferings",
+              "ec2:GetEbsEncryptionByDefault",
+              "elasticfilesystem:DescribeMountTargets",
+              "elasticfilesystem:CreateMountTarget",
+              "elasticfilesystem:CreateFileSystem",
+              "elasticfilesystem:DescribeFileSystems",
+              "elasticfilesystem:DeleteMountTarget",
+              "elasticfilesystem:DeleteFileSystem",
+              "elasticfilesystem:UpdateFileSystem",
+              "elasticfilesystem:PutLifecycleConfiguration",
+              "elasticfilesystem:TagResource"
+          ],
+          "Resource": "*"
+      },
+      {
+          "Sid": "TowerLaunch0",
+          "Effect": "Allow",
+          "Action": [
+              "s3:Get*",
+              "s3:List*",
+              "batch:DescribeJobQueues",
+              "batch:CancelJob",
+              "batch:SubmitJob",
+              "batch:ListJobs",
+              "batch:DescribeComputeEnvironments",
+              "batch:TerminateJob",
+              "batch:DescribeJobs",
+              "batch:RegisterJobDefinition",
+              "batch:DescribeJobDefinitions",
+              "ecs:DescribeTasks",
+              "ec2:DescribeInstances",
+              "ec2:DescribeInstanceTypes",
+              "ec2:DescribeInstanceAttribute",
+              "ecs:DescribeContainerInstances",
+              "ec2:DescribeInstanceStatus",
+              "ec2:DescribeImages",
+              "logs:Describe*",
+              "logs:Get*",
+              "logs:List*",
+              "logs:StartQuery",
+              "logs:StopQuery",
+              "logs:TestMetricFilter",
+              "logs:FilterLogEvents"
+          ],
+          "Resource": "*"
+      }
+  ]
+}
+EOF 
+}
+
+## Tower Namespace Name
+variable "tower_namespace_name" {
+  type = string 
+  default = "tower"
+  description = "The name of of the namespace used to deploy Tower manifests."
+}
+
+## Tower Service Account Name
+variable "tower_service_account_name" {
+  type = string 
+  default = "tower-sa"
+}
+
+## EKS Enable IRSA
+variable "eks_enable_irsa" {
+  type = bool 
+  default = string 
+  description = "Determines whether to create an OpenID Connect Provider for EKS to enable IRSA"
+}
+
 ## EKS Managed Node Group - Maximum Size
 variable "eks_managed_node_group_max_size" {
   type        = number
@@ -188,7 +309,7 @@ variable "eks_managed_node_group_defaults_instance_types" {
 
 variable "eks_managed_node_group_defaults_capacity_type" {
   type        = string
-  default     = "SPOT"
+  default     = "ON_DEMAND"
   description = "The capacity type for the default managed node group."
 }
 
