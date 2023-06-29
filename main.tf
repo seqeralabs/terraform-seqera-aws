@@ -207,6 +207,6 @@ module "tower_irsa_iam_eks_role" {
   role_name = "TowerIAMRole"
 
   cluster_service_accounts = {
-    "cluster1" = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
+    "${module.eks.cluster_id}" = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
   }
 }
