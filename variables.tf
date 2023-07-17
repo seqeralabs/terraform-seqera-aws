@@ -326,6 +326,12 @@ variable "redis_security_group_name" {
   description = "The name of the security group for Redis."
 }
 
+variable "tower_irsa_role_name" {
+  type = string
+  default = "tower-irsa-role"
+  description = "The name of the IAM role for IRSA."
+}
+
 variable "database_identifier" {
   type        = string
   default     = "tower"

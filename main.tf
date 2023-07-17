@@ -179,7 +179,7 @@ module "iam_policy" {
 module "tower_irsa" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name   = "TowerIAMRole"
+  role_name   = var.tower_irsa_role_name
 
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
@@ -197,16 +197,6 @@ module "tower_irsa" {
   }
 
   tags = {
-    Name = "TowerIAMRole"
+    Name = var.tower_irsa_role_name
   }
 }
-
-# module "tower_irsa_iam_eks_role" {
-#   source = "terraform-aws-modules/iam/aws//modules/iam-eks-role"
-
-#   role_name = "TowerIAMRole"
-
-#   cluster_service_accounts = {
-#     "${module.eks.cluster_id}" = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
-#   }
-# }
