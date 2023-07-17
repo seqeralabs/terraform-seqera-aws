@@ -169,7 +169,7 @@ module "memory_db" {
 module "iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
 
-  name        = "TowerIAMPolicy"
+  name        = var.tower_irsa_iam_policy_name
   path        = "/"
   description = "This policy provide the permissions needed for Tower service account to be able to interact with the required AWS services."
 

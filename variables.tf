@@ -332,6 +332,12 @@ variable "tower_irsa_role_name" {
   description = "The name of the IAM role for IRSA."
 }
 
+variable "tower_irsa_iam_policy_name" {
+  type = string
+  description = "The name of the IAM policy for IRSA."
+  default = "tower-irsa-iam-policy"
+}
+
 variable "database_identifier" {
   type        = string
   default     = "tower"
