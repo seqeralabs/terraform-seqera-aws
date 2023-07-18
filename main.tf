@@ -193,7 +193,7 @@ module "tower_irsa" {
 
   role_policy_arns = {
     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-    // additional           = module.iam_policy.arn
+    additional           = module.iam_policy.arn
   }
 
   tags = {
