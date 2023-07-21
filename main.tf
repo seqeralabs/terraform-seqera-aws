@@ -10,6 +10,8 @@ provider "kubernetes" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -71,6 +73,8 @@ module "eks" {
     }
   }
 
+  manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
+  aws_auth_accounts = data.aws_caller_identity.current.account_id 
   tags = var.default_tags
 }
 

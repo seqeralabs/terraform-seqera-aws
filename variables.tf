@@ -74,6 +74,12 @@ variable "eks_managed_node_group_min_size" {
   description = "The minimum size of the EKS managed node group."
 }
 
+variable "eks_manage_aws_auth_configmap" {
+  type = bool 
+  default = true
+  description = "Determines whether to manage the aws-auth ConfigMap."
+}
+
 ## Tower Service Account IRSA IAM Policy
 variable "tower_service_account_iam_policy" {
   type = string 
