@@ -26,6 +26,7 @@ variable "default_tags" {
 ## AWS Profile
 variable "aws_profile" {
   type        = string
+  default = "default"
   description = "The AWS profile used for authentication when interacting with AWS resources."
 }
 
