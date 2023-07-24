@@ -24,7 +24,7 @@ variable "default_tags" {
 }
 
 ## AWS Profile
-variable "profile" {
+variable "aws_profile" {
   type        = string
   description = "The AWS profile used for authentication when interacting with AWS resources."
 }
