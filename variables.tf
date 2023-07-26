@@ -198,7 +198,7 @@ EOF
 variable "tower_namespace_name" {
   type = string 
   default = "tower"
-  description = "The name of of the namespace used to deploy Tower manifests."
+  description = "The name of the namespace used to deploy Tower manifests."
 }
 
 ## Tower Service Account Name
