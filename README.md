@@ -84,7 +84,9 @@ This Terraform code is licensed under the Apache License
 
 ## Providers
 
-No providers.
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.0.0 |
 
 ## Modules
 
@@ -93,13 +95,17 @@ No providers.
 | <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | n/a |
 | <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | n/a |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~> 19.0 |
+| <a name="module_iam_policy"></a> [iam\_policy](#module\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
 | <a name="module_memory_db"></a> [memory\_db](#module\_memory\_db) | terraform-aws-modules/memory-db/aws | n/a |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | n/a |
+| <a name="module_tower_irsa"></a> [tower\_irsa](#module\_tower\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | n/a |
 
 ## Resources
 
-No resources.
+| Name | Type |
+|------|------|
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
 
 ## Inputs
 
@@ -111,10 +117,10 @@ No resources.
 | <a name="input_elasticache_subnets"></a> [elasticache\_subnets](#input\_elasticache\_subnets) | A list of subnet IDs for Elasticache subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_intra_subnets"></a> [intra\_subnets](#input\_intra\_subnets) | A list of subnet IDs for intra subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | A list of subnet IDs for private subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_profile"></a> [profile](#input\_profile) | The AWS profile used for authentication when interacting with AWS resources. | `string` | n/a | yes |
 | <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | A list of subnet IDs for public subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | The CIDR block for the VPC. | `string` | n/a | yes |
 | <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | The name of the Virtual Private Cloud (VPC) to be created. | `string` | n/a | yes |
+| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | The AWS profile used for authentication when interacting with AWS resources. | `string` | `"default"` | no |
 | <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | The version of Kubernetes to use for the EKS cluster. | `string` | `"1.27"` | no |
 | <a name="input_create_database_subnet_group"></a> [create\_database\_subnet\_group](#input\_create\_database\_subnet\_group) | Determines whether a database subnet group should be created. | `bool` | `true` | no |
 | <a name="input_create_database_subnet_route_table"></a> [create\_database\_subnet\_route\_table](#input\_create\_database\_subnet\_route\_table) | Determines whether a subnet route table should be created for the database subnets. | `bool` | `true` | no |
@@ -135,13 +141,18 @@ No resources.
 | <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"tower"` | no |
 | <a name="input_db_options"></a> [db\_options](#input\_db\_options) | The list of database options. | <pre>list(object({<br>    option_name = string<br>    option_settings = list(object({<br>      name  = string<br>      value = string<br>    }))<br>  }))</pre> | <pre>[<br>  {<br>    "option_name": "MARIADB_AUDIT_PLUGIN",<br>    "option_settings": [<br>      {<br>        "name": "SERVER_AUDIT_EVENTS",<br>        "value": "CONNECT"<br>      },<br>      {<br>        "name": "SERVER_AUDIT_FILE_ROTATIONS",<br>        "value": "37"<br>      }<br>    ]<br>  }<br>]</pre> | no |
 | <a name="input_db_parameters"></a> [db\_parameters](#input\_db\_parameters) | The list of database parameters. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "character_set_client",<br>    "value": "utf8mb4"<br>  },<br>  {<br>    "name": "character_set_server",<br>    "value": "utf8mb4"<br>  }<br>]</pre> | no |
+| <a name="input_db_password"></a> [db\_password](#input\_db\_password) | Password for the master DB user. Note that this may show up in logs, and it will be stored in the state file. The password provided will not be used if `manage_master_user_password` is set to true. | `string` | `"my_db_password"` | no |
 | <a name="input_db_port"></a> [db\_port](#input\_db\_port) | The port for the database. | `string` | `"3306"` | no |
 | <a name="input_db_security_group_name"></a> [db\_security\_group\_name](#input\_db\_security\_group\_name) | The name of the security group for the database. | `string` | `"tower_db_security_group"` | no |
 | <a name="input_db_username"></a> [db\_username](#input\_db\_username) | The username for the database. | `string` | `"tower"` | no |
 | <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to the provisioned resources. | `map(string)` | <pre>{<br>  "Environment": "Development",<br>  "ManagedBy": "Terraform",<br>  "Product": "Tower"<br>}</pre> | no |
+| <a name="input_eks_aws_auth_roles"></a> [eks\_aws\_auth\_roles](#input\_eks\_aws\_auth\_roles) | List of roles ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
+| <a name="input_eks_aws_auth_users"></a> [eks\_aws\_auth\_users](#input\_eks\_aws\_auth\_users) | List of users ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_cluster_addons"></a> [eks\_cluster\_addons](#input\_eks\_cluster\_addons) | Addons to be enabled for the EKS cluster. | <pre>map(object({<br>    most_recent = bool<br>  }))</pre> | <pre>{<br>  "coredns": {<br>    "most_recent": true<br>  },<br>  "kube-proxy": {<br>    "most_recent": true<br>  },<br>  "vpc-cni": {<br>    "most_recent": true<br>  }<br>}</pre> | no |
 | <a name="input_eks_cluster_endpoint_public_access"></a> [eks\_cluster\_endpoint\_public\_access](#input\_eks\_cluster\_endpoint\_public\_access) | Determines whether the EKS cluster endpoint is publicly accessible. | `bool` | `true` | no |
-| <a name="input_eks_managed_node_group_defaults_capacity_type"></a> [eks\_managed\_node\_group\_defaults\_capacity\_type](#input\_eks\_managed\_node\_group\_defaults\_capacity\_type) | The capacity type for the default managed node group. | `string` | `"SPOT"` | no |
+| <a name="input_eks_enable_irsa"></a> [eks\_enable\_irsa](#input\_eks\_enable\_irsa) | Determines whether to create an OpenID Connect Provider for EKS to enable IRSA | `bool` | `true` | no |
+| <a name="input_eks_manage_aws_auth_configmap"></a> [eks\_manage\_aws\_auth\_configmap](#input\_eks\_manage\_aws\_auth\_configmap) | Determines whether to manage the aws-auth ConfigMap. | `bool` | `true` | no |
+| <a name="input_eks_managed_node_group_defaults_capacity_type"></a> [eks\_managed\_node\_group\_defaults\_capacity\_type](#input\_eks\_managed\_node\_group\_defaults\_capacity\_type) | The capacity type for the default managed node group. | `string` | `"ON_DEMAND"` | no |
 | <a name="input_eks_managed_node_group_defaults_instance_types"></a> [eks\_managed\_node\_group\_defaults\_instance\_types](#input\_eks\_managed\_node\_group\_defaults\_instance\_types) | A list of EC2 instance types for the default managed node group. | `list(string)` | <pre>[<br>  "m5a.2xlarge"<br>]</pre> | no |
 | <a name="input_eks_managed_node_group_desired_size"></a> [eks\_managed\_node\_group\_desired\_size](#input\_eks\_managed\_node\_group\_desired\_size) | The desired size of the EKS managed node group. | `number` | `1` | no |
 | <a name="input_eks_managed_node_group_max_size"></a> [eks\_managed\_node\_group\_max\_size](#input\_eks\_managed\_node\_group\_max\_size) | The maximum size of the EKS managed node group. | `number` | `5` | no |
@@ -173,6 +184,11 @@ No resources.
 | <a name="input_redis_tls_enabled"></a> [redis\_tls\_enabled](#input\_redis\_tls\_enabled) | Determines whether TLS (Transport Layer Security) is enabled for Redis. | `bool` | `true` | no |
 | <a name="input_redis_users"></a> [redis\_users](#input\_redis\_users) | A map of Redis user configurations. | <pre>map(object({<br>    user_name     = string<br>    access_string = string<br>    passwords     = list(string)<br>    tags          = map(string)<br>  }))</pre> | <pre>{<br>  "admin": {<br>    "access_string": "on ~* &* +@all",<br>    "passwords": [<br>      "YouShouldPickAStrongSecurePassword987!"<br>    ],<br>    "tags": {<br>      "User": "admin"<br>    },<br>    "user_name": "admin-user"<br>  },<br>  "readonly": {<br>    "access_string": "on ~* &* -@all +@read",<br>    "passwords": [<br>      "YouShouldPickAStrongSecurePassword123!"<br>    ],<br>    "tags": {<br>      "User": "readonly"<br>    },<br>    "user_name": "readonly-user"<br>  }<br>}</pre> | no |
 | <a name="input_region"></a> [region](#input\_region) | The AWS region in which the resources will be provisioned. | `string` | `"eu-west-2"` | no |
+| <a name="input_tower_irsa_iam_policy_name"></a> [tower\_irsa\_iam\_policy\_name](#input\_tower\_irsa\_iam\_policy\_name) | The name of the IAM policy for IRSA. | `string` | `"tower-irsa-iam-policy"` | no |
+| <a name="input_tower_irsa_role_name"></a> [tower\_irsa\_role\_name](#input\_tower\_irsa\_role\_name) | The name of the IAM role for IRSA. | `string` | `"tower-irsa-role"` | no |
+| <a name="input_tower_namespace_name"></a> [tower\_namespace\_name](#input\_tower\_namespace\_name) | The name of the namespace used to deploy Tower manifests. | `string` | `"tower"` | no |
+| <a name="input_tower_service_account_iam_policy"></a> [tower\_service\_account\_iam\_policy](#input\_tower\_service\_account\_iam\_policy) | # Tower Service Account IRSA IAM Policy | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n      {\n          \"Sid\": \"TowerForge0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"ssm:GetParameters\",\n              \"iam:CreateInstanceProfile\",\n              \"iam:DeleteInstanceProfile\",\n              \"iam:GetRole\",\n              \"iam:RemoveRoleFromInstanceProfile\",\n              \"iam:CreateRole\",\n              \"iam:DeleteRole\",\n              \"iam:AttachRolePolicy\",\n              \"iam:PutRolePolicy\",\n              \"iam:AddRoleToInstanceProfile\",\n              \"iam:PassRole\",\n              \"iam:DetachRolePolicy\",\n              \"iam:ListAttachedRolePolicies\",\n              \"iam:DeleteRolePolicy\",\n              \"iam:ListRolePolicies\",\n              \"iam:TagRole\",\n              \"iam:TagInstanceProfile\",\n              \"batch:CreateComputeEnvironment\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:CreateJobQueue\",\n              \"batch:DescribeJobQueues\",\n              \"batch:UpdateComputeEnvironment\",\n              \"batch:DeleteComputeEnvironment\",\n              \"batch:UpdateJobQueue\",\n              \"batch:DeleteJobQueue\",\n              \"batch:TagResource\",\n              \"fsx:DeleteFileSystem\",\n              \"fsx:DescribeFileSystems\",\n              \"fsx:CreateFileSystem\",\n              \"fsx:TagResource\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeLaunchTemplates\",\n              \"ec2:DescribeLaunchTemplateVersions\", \n              \"ec2:CreateLaunchTemplate\",\n              \"ec2:DeleteLaunchTemplate\",\n              \"ec2:DescribeKeyPairs\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeInstanceTypeOfferings\",\n              \"ec2:GetEbsEncryptionByDefault\",\n              \"elasticfilesystem:DescribeMountTargets\",\n              \"elasticfilesystem:CreateMountTarget\",\n              \"elasticfilesystem:CreateFileSystem\",\n              \"elasticfilesystem:DescribeFileSystems\",\n              \"elasticfilesystem:DeleteMountTarget\",\n              \"elasticfilesystem:DeleteFileSystem\",\n              \"elasticfilesystem:UpdateFileSystem\",\n              \"elasticfilesystem:PutLifecycleConfiguration\",\n              \"elasticfilesystem:TagResource\"\n          ],\n          \"Resource\": \"*\"\n      },\n      {\n          \"Sid\": \"TowerLaunch0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"s3:Get*\",\n              \"s3:List*\",\n              \"batch:DescribeJobQueues\",\n              \"batch:CancelJob\",\n              \"batch:SubmitJob\",\n              \"batch:ListJobs\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:TerminateJob\",\n              \"batch:DescribeJobs\",\n              \"batch:RegisterJobDefinition\",\n              \"batch:DescribeJobDefinitions\",\n              \"ecs:DescribeTasks\",\n              \"ec2:DescribeInstances\",\n              \"ec2:DescribeInstanceTypes\",\n              \"ec2:DescribeInstanceAttribute\",\n              \"ecs:DescribeContainerInstances\",\n              \"ec2:DescribeInstanceStatus\",\n              \"ec2:DescribeImages\",\n              \"logs:Describe*\",\n              \"logs:Get*\",\n              \"logs:List*\",\n              \"logs:StartQuery\",\n              \"logs:StopQuery\",\n              \"logs:TestMetricFilter\",\n              \"logs:FilterLogEvents\"\n          ],\n          \"Resource\": \"*\"\n      }\n  ]\n}\n"` | no |
+| <a name="input_tower_service_account_name"></a> [tower\_service\_account\_name](#input\_tower\_service\_account\_name) | # Tower Service Account Name | `string` | `"tower-sa"` | no |
 
 ## Outputs
 
