@@ -57,6 +57,19 @@ locals {
       ]
     )
   )
+
+  eks_aws_auth_users = distinct(flatten(
+      [
+        for user in var.eks_aws_auth_users : [
+          {
+            userarn  = user
+            username = "user1"
+            groups   = ["system:masters"]
+          }
+        ]
+      ]
+    )
+  )
 }
 
 module "eks" {
@@ -95,6 +108,7 @@ module "eks" {
   manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
   // aws_auth_accounts = [ data.aws_caller_identity.current.account_id ]
   aws_auth_roles = local.eks_aws_auth_roles
+  aws_auth_users = local.eks_aws_auth_users
 
   tags = var.default_tags
 }
