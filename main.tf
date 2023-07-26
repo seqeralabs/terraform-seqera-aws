@@ -40,6 +40,25 @@ module "vpc" {
   tags = var.default_tags
 }
 
+locals {
+  eks_aws_auth_roles = distinct(flatten(
+      [
+        for role in var.eks_aws_auth_roles : [
+          {
+            rolearn  = role
+            username = "system:node:{{SessionName}}"
+            groups = [
+              "system:bootstrappers",
+              "system:nodes",
+              "system:node-proxier",
+            ]
+          }
+        ]
+      ]
+    )
+  )
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"
@@ -75,7 +94,7 @@ module "eks" {
 
   manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
   // aws_auth_accounts = [ data.aws_caller_identity.current.account_id ]
-  aws_auth_roles = var.eks_aws_auth_roles
+  aws_auth_roles = local.eks_aws_auth_roles
 
   tags = var.default_tags
 }
