@@ -48,6 +48,13 @@ module "terraform-seqera-module" {
   eks_aws_auth_users = [
     "arn:aws:iam::1234567890123:user/MyIAMUSer"
   ]
+
+  default_tags = {
+    Environment = "myenvironment"
+    ManagedBy   = "Terraform"
+    Product     = "Tower"
+    CreatedBy   = "DevOps"
+  }
 }
 ```
 
@@ -154,7 +161,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_port"></a> [db\_port](#input\_db\_port) | The port for the database. | `string` | `"3306"` | no |
 | <a name="input_db_security_group_name"></a> [db\_security\_group\_name](#input\_db\_security\_group\_name) | The name of the security group for the database. | `string` | `"tower_db_security_group"` | no |
 | <a name="input_db_username"></a> [db\_username](#input\_db\_username) | The username for the database. | `string` | `"tower"` | no |
-| <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to the provisioned resources. | `map(string)` | <pre>{<br>  "Environment": "Development",<br>  "ManagedBy": "Terraform",<br>  "Product": "Tower"<br>}</pre> | no |
+| <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to the provisioned resources. | `map(string)` | <pre>{<br>  "ManagedBy": "Terraform",<br>  "Product": "Tower"<br>}</pre> | no |
 | <a name="input_eks_aws_auth_roles"></a> [eks\_aws\_auth\_roles](#input\_eks\_aws\_auth\_roles) | List of roles ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_aws_auth_users"></a> [eks\_aws\_auth\_users](#input\_eks\_aws\_auth\_users) | List of users ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_cluster_addons"></a> [eks\_cluster\_addons](#input\_eks\_cluster\_addons) | Addons to be enabled for the EKS cluster. | <pre>map(object({<br>    most_recent = bool<br>  }))</pre> | <pre>{<br>  "coredns": {<br>    "most_recent": true<br>  },<br>  "kube-proxy": {<br>    "most_recent": true<br>  },<br>  "vpc-cni": {<br>    "most_recent": true<br>  }<br>}</pre> | no |
