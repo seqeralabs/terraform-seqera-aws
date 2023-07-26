@@ -22,11 +22,11 @@ Example:
 ```
 module "terraform-seqera-module" {
   source  = "github.com/seqeralabs/terraform-seqera-module"
-  profile = "development"
+  aws_profile = "my-aws-profile"
   region  = "eu-west-2"
 
   ## VPC
-  vpc_name = "terraform-seqera-module"
+  vpc_name = "my-tower-tf-vpc"
   vpc_cidr = "10.0.0.0/16"
 
   azs                 = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
@@ -37,8 +37,17 @@ module "terraform-seqera-module" {
   intra_subnets       = ["10.0.110.0/24", "10.0.111.0/24", "10.0.112.0/24"]
 
   ## EKS
-  cluster_name    = "tower"
+  cluster_name    = "my-tower-tf-cluster"
   cluster_version = "1.27"
+  eks_managed_node_group_defaults_instance_types = ["t3.medium"]
+  eks_managed_node_group_defaults_capacity_type = "ON_DEMAND"
+  eks_aws_auth_roles = [
+    "arn:aws:iam::1234567890123:role/MyIAMRole",
+  ]
+
+  eks_aws_auth_users = [
+    "arn:aws:iam::1234567890123:user/MyIAMUSer"
+  ]
 }
 ```
 
