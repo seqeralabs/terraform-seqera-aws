@@ -46,11 +46,9 @@ locals {
         for role in var.eks_aws_auth_roles : [
           {
             rolearn  = role
-            username = "system:node:{{SessionName}}"
+            username = element(split("/", role), 1)
             groups = [
-              "system:bootstrappers",
-              "system:nodes",
-              "system:node-proxier",
+              "system:masters"
             ]
           }
         ]
