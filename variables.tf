@@ -17,7 +17,6 @@ variable "default_tags" {
   type = map(string)
   default = {
     ManagedBy   = "Terraform"
-    Environment = "Development"
     Product     = "Tower"
   }
   description = "Default tags to be applied to the provisioned resources."
