@@ -63,7 +63,7 @@ locals {
         for user in var.eks_aws_auth_users : [
           {
             userarn  = user
-            username = "user1"
+            username = element(split("/", user), 1)
             groups   = ["system:masters"]
           }
         ]
