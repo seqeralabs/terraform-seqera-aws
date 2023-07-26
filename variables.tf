@@ -82,8 +82,8 @@ variable "eks_manage_aws_auth_configmap" {
 }
 
 variable "eks_aws_auth_roles" {
-  type = list(any)
-  description = "List of role maps to add to the aws-auth configmap"
+  type = list(string)
+  description = "List of roles ARNs to add to the aws-auth configmap"
 }
 
 ## Tower Service Account IRSA IAM Policy
