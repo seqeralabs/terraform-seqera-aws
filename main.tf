@@ -10,6 +10,18 @@ provider "kubernetes" {
   }
 }
 
+provider "helm" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    # This requires the awscli to be installed locally where Terraform is executed
+    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws_profile]
+  }
+}
+
 data "aws_caller_identity" "current" {}
 
 module "vpc" {
@@ -214,7 +226,7 @@ module "memory_db" {
   tags = var.default_tags
 }
 
-module "iam_policy" {
+module "tower_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
 
   name        = var.tower_irsa_iam_policy_name
@@ -241,7 +253,7 @@ module "tower_irsa" {
 
   role_policy_arns = {
     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-    additional           = module.iam_policy.arn
+    additional           = module.tower_iam_policy.arn
   }
 
   tags = {
