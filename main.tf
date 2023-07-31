@@ -268,7 +268,7 @@ module "alb_controller_iam_policy" {
   path        = "/"
   description = "This policy provide the permissions needed for AWS LoadBalancer controller service account to be able to interact with the required AWS services."
 
-  policy = var.alb_controller_iam_policy
+  policy = var.alb_controller_service_account_iam_policy
 }
 
 module "alb_controller_irsa" {
@@ -282,7 +282,7 @@ module "alb_controller_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["${kube-system}:${var.alb_controller_service_account_name}"]
+      namespace_service_accounts = ["kube-system:${var.alb_controller_service_account_name}"]
     }
   }
 

@@ -612,7 +612,7 @@ variable "tower_irsa_iam_policy_name" {
   default = "tower-irsa-iam-policy"
 }
 
-variable "alb_controller_role_name" {
+variable "alb_controller_irsa_role_name" {
   type = string
   default = "alb-controller-role"
   description = "The name of the IAM role for the ALB controller."
