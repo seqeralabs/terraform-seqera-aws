@@ -247,7 +247,7 @@ module "tower_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_namespace_name}"]
+      namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_service_account_name}"]
     }
   }
 
@@ -258,5 +258,40 @@ module "tower_irsa" {
 
   tags = {
     Name = var.tower_irsa_role_name
+  }
+}
+
+module "alb_controller_iam_policy" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+
+  name        = var.alb_controller_iam_policy_name
+  path        = "/"
+  description = "This policy provide the permissions needed for AWS LoadBalancer controller service account to be able to interact with the required AWS services."
+
+  policy = var.alb_controller_iam_policy
+}
+
+module "alb_controller_irsa" {
+  source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+
+  role_name   = var.alb_controller_irsa_role_name
+
+  attach_vpc_cni_policy = true
+  vpc_cni_enable_ipv4   = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["${kube-system}:${var.alb_controller_service_account_name}"]
+    }
+  }
+
+  role_policy_arns = {
+    AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+    additional           = module.alb_controller_iam_policy.arn
+  }
+
+  tags = {
+    Name = var.alb_controller_irsa_role_name
   }
 }
