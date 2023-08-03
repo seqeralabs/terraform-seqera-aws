@@ -592,13 +592,13 @@ variable "redis_users" {
   description = "A map of Redis user configurations."
   default = {
     admin = {
-      user_name     = "tower_admin-user"
+      user_name     = "tower-admin-user"
       access_string = "on ~* &* +@all"
       passwords     = ["YouShouldPickAStrongSecurePassword987!"]
       tags          = { User = "admin" }
     }
     readonly = {
-      user_name     = "tower_readonly-user"
+      user_name     = "tower-readonly-user"
       access_string = "on ~* &* -@all +@read"
       passwords     = ["YouShouldPickAStrongSecurePassword123!"]
       tags          = { User = "readonly" }
