@@ -299,7 +299,7 @@ variable "enable_nat_gateway" {
 
 variable "enable_vpn_gateway" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether a VPN gateway should be provisioned."
 }
 
