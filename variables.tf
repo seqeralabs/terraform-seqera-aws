@@ -8,7 +8,7 @@ variable "environment" {
 ## Region
 variable "region" {
   type        = string
-  default     = "eu-west-2"
+  default     = "eu-west-1"
   description = "The AWS region in which the resources will be provisioned."
 }
 
@@ -17,7 +17,7 @@ variable "default_tags" {
   type = map(string)
   default = {
     ManagedBy   = "Terraform"
-    Product     = "Tower"
+    Product     = "Seqera Platform"
   }
   description = "Default tags to be applied to the provisioned resources."
 }
@@ -92,10 +92,10 @@ variable "eks_aws_auth_users" {
   description = "List of users ARNs to add to the aws-auth config map"
 }
 
-## Tower Service Account IRSA IAM Policy
-variable "tower_service_account_iam_policy" {
+## Seqera Service Account IRSA IAM Policy
+variable "seqera_platform_service_account_iam_policy" {
   type = string 
-  description = "IAM policy for the Tower service account"
+  description = "IAM policy for the Seqera service account"
   default = <<EOF
 {
   "Version": "2012-10-17",
@@ -194,18 +194,18 @@ variable "tower_service_account_iam_policy" {
 EOF 
 }
 
-## Tower Namespace Name
-variable "tower_namespace_name" {
+## Seqera Namespace Name
+variable "seqera_namespace_name" {
   type = string 
-  default = "tower"
-  description = "The name of the namespace used to deploy Tower manifests."
+  default = "seqera_platform"
+  description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
-## Tower Service Account Name
-variable "tower_service_account_name" {
+## Seqera Service Account Name
+variable "seqera_service_account_name" {
   type = string 
-  description = "Name for the Tower service account"
-  default = "tower-sa"
+  description = "Name for the Seqera platform service account"
+  default = "seqera-sa"
 }
 
 ## EKS Enable IRSA
@@ -336,39 +336,39 @@ variable "eks_managed_node_group_defaults_capacity_type" {
 ## Security Group
 variable "db_security_group_name" {
   type        = string
-  default     = "tower_db_security_group"
+  default     = "seqera_db_security_group"
   description = "The name of the security group for the database."
 }
 
 variable "redis_security_group_name" {
   type        = string
-  default     = "tower_redis_security_group"
+  default     = "seqera_redis_security_group"
   description = "The name of the security group for Redis."
 }
 
-variable "tower_irsa_role_name" {
+variable "seqera_irsa_role_name" {
   type = string
-  default = "tower-irsa-role"
+  default = "seqera-irsa-role"
   description = "The name of the IAM role for IRSA."
 }
 
-variable "tower_irsa_iam_policy_name" {
+variable "seqera_irsa_iam_policy_name" {
   type = string
   description = "The name of the IAM policy for IRSA."
-  default = "tower-irsa-iam-policy"
+  default = "seqera-irsa-iam-policy"
 }
 
 ## Database
 
 variable "database_identifier" {
   type        = string
-  default     = "tower"
+  default     = "seqera-db"
   description = "The identifier for the database."
 }
 
 variable "redis_cluster_name" {
   type        = string
-  default     = "tower"
+  default     = "seqera-redis"
   description = "The name of the Redis cluster."
 }
 
@@ -392,13 +392,13 @@ variable "db_allocated_storage" {
 
 variable "db_name" {
   type        = string
-  default     = "tower"
+  default     = "seqera-db"
   description = "The name of the database."
 }
 
 variable "db_username" {
   type        = string
-  default     = "tower"
+  default     = "admin"
   description = "The username for the database."
 }
 
@@ -488,7 +488,7 @@ variable "db_monitoring_interval" {
 
 variable "db_monitoring_role_name" {
   type        = string
-  default     = "TowerRDSMonitoringRole"
+  default     = "SeqeraRDSMonitoringRole"
   description = "The name of the IAM role used for database monitoring."
 }
 
@@ -592,13 +592,13 @@ variable "redis_users" {
   description = "A map of Redis user configurations."
   default = {
     admin = {
-      user_name     = "tower-admin-user"
+      user_name     = "seqera-admin-user"
       access_string = "on ~* &* +@all"
       passwords     = ["YouShouldPickAStrongSecurePassword987!"]
       tags          = { User = "admin" }
     }
     readonly = {
-      user_name     = "tower-readonly-user"
+      user_name     = "seqera-readonly-user"
       access_string = "on ~* &* -@all +@read"
       passwords     = ["YouShouldPickAStrongSecurePassword123!"]
       tags          = { User = "readonly" }
@@ -610,13 +610,13 @@ variable "redis_users" {
 variable "redis_parameter_group_name" {
   type        = string
   description = "The name of the Redis parameter group."
-  default     = "tower-param-group"
+  default     = "redis-param-group"
 }
 
 variable "redis_parameter_group_description" {
   type        = string
   description = "The description of the Redis parameter group."
-  default     = "Tower MemoryDB parameter group"
+  default     = "Redis MemoryDB parameter group"
 }
 
 variable "redis_parameter_group_family" {
@@ -657,11 +657,11 @@ variable "redis_create_subnet_group" {
 variable "redis_subnet_group_name" {
   type        = string
   description = "The name of the Redis subnet group."
-  default     = "tower-redis-subnetgroup"
+  default     = "seqera-redis-subnetgroup"
 }
 
 variable "redis_subnet_group_description" {
   type        = string
   description = "The description of the Redis subnet group."
-  default     = "Tower MemoryDB subnet group"
+  default     = "Seqera MemoryDB subnet group"
 }
