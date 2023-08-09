@@ -226,10 +226,15 @@ module "memory_db" {
   tags = var.default_tags
 }
 
+locals {
+  tower_irsa_role_name = "${var.tower_irsa_role_name}-${timestamp()}"
+  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}-${timestamp()}"
+}
+
 module "tower_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
 
-  name        = var.tower_irsa_iam_policy_name
+  name        = local.tower_irsa_iam_policy_name
   path        = "/"
   description = "This policy provide the permissions needed for Tower service account to be able to interact with the required AWS services."
 
@@ -239,7 +244,7 @@ module "tower_iam_policy" {
 module "tower_irsa" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name   = var.tower_irsa_role_name
+  role_name   = local.tower_irsa_role_name
 
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
@@ -257,6 +262,6 @@ module "tower_irsa" {
   }
 
   tags = {
-    Name = var.tower_irsa_role_name
+    Name = local.tower_irsa_role_name
   }
 }
