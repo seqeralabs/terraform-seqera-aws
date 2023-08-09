@@ -227,8 +227,9 @@ module "memory_db" {
 }
 
 locals {
-  tower_irsa_role_name = "${var.tower_irsa_role_name}${formatdate("YYYYMMDDhhmmss", timestamp())}"
-  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  timestamp = "${timestamp()}"
+  tower_irsa_role_name = "${var.tower_irsa_role_name}-${replace("${local.timestamp}", "/[- TZ:]/", "")}"
+  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}-${replace("${local.timestamp}", "/[- TZ:]/", "")}"
 }
 
 module "tower_iam_policy" {
