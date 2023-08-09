@@ -227,10 +227,8 @@ module "memory_db" {
 }
 
 locals {
-  timestamp = "${timestamp()}"
-  timestamp_sanitized = "${replace("${local.timestamp}", "/[-| |T|Z|:]/", "")}"
-  tower_irsa_role_name = "${var.tower_irsa_role_name}-${local.timestamp_sanitized}"
-  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}-${local.timestamp_sanitized}"
+  tower_irsa_role_name = "${var.tower_irsa_role_name}-${var.cluster_name}-${var.region}"
+  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
 }
 
 module "tower_iam_policy" {
