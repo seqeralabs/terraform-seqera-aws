@@ -227,8 +227,8 @@ module "memory_db" {
 }
 
 locals {
-  tower_irsa_role_name = "${var.tower_irsa_role_name}${timestamp()}"
-  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}${timestamp()}"
+  tower_irsa_role_name = "${var.tower_irsa_role_name}${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}${formatdate("YYYYMMDDhhmmss", timestamp())}"
 }
 
 module "tower_iam_policy" {
