@@ -105,7 +105,7 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    tower = {
+    seqera = {
       min_size     = var.eks_managed_node_group_min_size
       max_size     = var.eks_managed_node_group_max_size
       desired_size = var.eks_managed_node_group_desired_size
@@ -122,11 +122,15 @@ module "eks" {
   tags = var.default_tags
 }
 
+# resource "kubernetes_config_map_v1" "name" {
+  
+# }
+
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
   name        = var.db_security_group_name
-  description = "Security group for access from Tower EKS cluster to tower db"
+  description = "Security group for access from seqera EKS cluster to seqera db"
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
@@ -136,7 +140,7 @@ module "redis_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
   name        = var.redis_security_group_name
-  description = "Security group for access from Tower EKS cluster to tower redis"
+  description = "Security group for access from seqera EKS cluster to seqera redis"
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
@@ -193,7 +197,7 @@ module "memory_db" {
 
   # Cluster
   name        = var.redis_cluster_name
-  description = "Tower MemoryDB cluster"
+  description = "seqera MemoryDB cluster"
 
   engine_version             = var.redis_engine_version
   auto_minor_version_upgrade = var.redis_auto_minor_version_upgrade
@@ -227,24 +231,24 @@ module "memory_db" {
 }
 
 locals {
-  tower_irsa_role_name = "${var.tower_irsa_role_name}-${var.cluster_name}-${var.region}"
-  tower_irsa_iam_policy_name = "${var.tower_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_role_name = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_iam_policy_name = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
 }
 
-module "tower_iam_policy" {
+module "seqera_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
 
-  name        = local.tower_irsa_iam_policy_name
+  name        = local.seqera_irsa_iam_policy_name
   path        = "/"
-  description = "This policy provide the permissions needed for Tower service account to be able to interact with the required AWS services."
+  description = "This policy provide the permissions needed for seqera service account to be able to interact with the required AWS services."
 
-  policy = var.tower_service_account_iam_policy
+  policy = var.seqera_service_account_iam_policy
 }
 
-module "tower_irsa" {
+module "seqera_irsa" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name   = local.tower_irsa_role_name
+  role_name   = local.seqera_irsa_role_name
 
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
@@ -252,16 +256,17 @@ module "tower_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["${var.tower_namespace_name}:${var.tower_service_account_name}"]
+      namespace_service_accounts = ["${var.seqera_namespace_name}:${var.seqera_service_account_name}"]
     }
   }
 
   role_policy_arns = {
     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-    additional           = module.tower_iam_policy.arn
+    additional           = module.seqera_iam_policy.arn
   }
 
   tags = {
-    Name = local.tower_irsa_role_name
+    Name = local.seqera_irsa_role_name
   }
 }
+
