@@ -122,9 +122,25 @@ module "eks" {
   tags = var.default_tags
 }
 
-# resource "kubernetes_config_map_v1" "name" {
-  
-# }
+resource "kubernetes_namespace_v1" "this" {
+  metadata {
+    name = var.seqera_namespace_name
+  }
+}
+
+resource "kubernetes_config_map_v1" "this" {
+  metadata {
+    name = var.seqera_configmap_name
+  }
+
+  data = {
+    TOWER_REDIS_URL: module.memory_db.cluster_endpoint_address
+    TOWER_DB_URL: module.db.db_instance_address
+    TOWER_DB_DRIVER: var.tower_db_driver
+    TOWER_DB_USER: var.db_username
+    TOWER_DB_PASSWORD: var.db_password
+  }
+}
 
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
