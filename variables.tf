@@ -201,6 +201,19 @@ variable "seqera_namespace_name" {
   description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
+## Seqera ConfigMap Name
+variable "seqera_configmap_name" {
+  type = string 
+  default = "seqera-configmap"
+  description = "The name of the ConfigMap used to deploy Seqera platform manifests."
+}
+
+variable "tower_db_driver" {
+  type = string
+  default = "org.mariadb.jdbc.Driver"
+  description = "The JDBC driver for the Tower database"
+}
+
 ## Seqera Service Account Name
 variable "seqera_service_account_name" {
   type = string 
@@ -392,7 +405,7 @@ variable "db_allocated_storage" {
 
 variable "db_name" {
   type        = string
-  default     = "seqera-db"
+  default     = "seqera"
   description = "The name of the database."
 }
 
