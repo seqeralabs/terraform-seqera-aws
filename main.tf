@@ -242,7 +242,7 @@ module "seqera_iam_policy" {
   path        = "/"
   description = "This policy provide the permissions needed for seqera service account to be able to interact with the required AWS services."
 
-  policy = var.seqera_service_account_iam_policy
+  policy = var.seqera_platform_service_account_iam_policy
 }
 
 module "seqera_irsa" {
