@@ -197,7 +197,7 @@ EOF
 ## Seqera Namespace Name
 variable "seqera_namespace_name" {
   type = string 
-  default = "seqera_platform"
+  default = "seqera-platform"
   description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
