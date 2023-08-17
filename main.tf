@@ -191,7 +191,7 @@ module "db" {
   engine_version      = var.db_engine_version
   instance_class      = var.db_instance_class
   allocated_storage   = var.db_allocated_storage
-  skip_final_snapshot = var.skip_final_snapshot
+  skip_final_snapshot = var.db_skip_final_snapshot
 
   db_name  = var.db_name
   username = var.db_username
