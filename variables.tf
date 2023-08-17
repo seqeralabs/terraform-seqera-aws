@@ -421,6 +421,12 @@ variable "db_allocated_storage" {
   description = "The allocated storage size for the database."
 }
 
+variable "db_skip_final_snapshot" {
+  type        = bool
+  default     = true
+  description = "Determines whether a final snapshot should be created when the database is deleted."
+}
+
 variable "db_name" {
   type        = string
   default     = "seqera"
