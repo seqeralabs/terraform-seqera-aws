@@ -16,8 +16,8 @@ variable "region" {
 variable "default_tags" {
   type = map(string)
   default = {
-    ManagedBy   = "Terraform"
-    Product     = "Seqera Platform"
+    ManagedBy = "Terraform"
+    Product   = "Seqera Platform"
   }
   description = "Default tags to be applied to the provisioned resources."
 }
@@ -25,7 +25,7 @@ variable "default_tags" {
 ## AWS Profile
 variable "aws_profile" {
   type        = string
-  default = "default"
+  default     = "default"
   description = "The AWS profile used for authentication when interacting with AWS resources."
 }
 
@@ -75,28 +75,28 @@ variable "eks_managed_node_group_min_size" {
 }
 
 variable "eks_manage_aws_auth_configmap" {
-  type = bool 
-  default = true
+  type        = bool
+  default     = true
   description = "Determines whether to manage the aws-auth ConfigMap."
 }
 
 variable "eks_aws_auth_roles" {
-  type = list(string)
-  default = []
+  type        = list(string)
+  default     = []
   description = "List of roles ARNs to add to the aws-auth config map"
 }
 
 variable "eks_aws_auth_users" {
-  type = list(string)
-  default = []
+  type        = list(string)
+  default     = []
   description = "List of users ARNs to add to the aws-auth config map"
 }
 
 ## Seqera Service Account IRSA IAM Policy
 variable "seqera_platform_service_account_iam_policy" {
-  type = string 
+  type        = string
   description = "IAM policy for the Seqera service account"
-  default = <<EOF
+  default     = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -196,47 +196,47 @@ EOF
 
 ## Seqera Namespace Name
 variable "seqera_namespace_name" {
-  type = string 
-  default = "seqera-platform"
+  type        = string
+  default     = "seqera-platform"
   description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
 variable "create_seqera_namespace" {
-  type = bool 
-  default = true 
+  type        = bool
+  default     = true
   description = "Determines whether to create the Seqera namespace."
 }
-  
+
 variable "create_seqera_configmap" {
-  type = bool 
-  default = true 
+  type        = bool
+  default     = true
   description = "Determines whether to create the Seqera ConfigMap."
 }
 
 ## Seqera ConfigMap Name
 variable "seqera_configmap_name" {
-  type = string 
-  default = "seqera-configmap"
+  type        = string
+  default     = "seqera-configmap"
   description = "The name of the ConfigMap used to deploy Seqera platform manifests."
 }
 
 variable "tower_db_driver" {
-  type = string
-  default = "org.mariadb.jdbc.Driver"
+  type        = string
+  default     = "org.mariadb.jdbc.Driver"
   description = "The JDBC driver for the Tower database"
 }
 
 ## Seqera Service Account Name
 variable "seqera_service_account_name" {
-  type = string 
+  type        = string
   description = "Name for the Seqera platform service account"
-  default = "seqera-sa"
+  default     = "seqera-sa"
 }
 
 ## EKS Enable IRSA
 variable "eks_enable_irsa" {
-  type = bool 
-  default = true 
+  type        = bool
+  default     = true
   description = "Determines whether to create an OpenID Connect Provider for EKS to enable IRSA"
 }
 
@@ -372,15 +372,15 @@ variable "redis_security_group_name" {
 }
 
 variable "seqera_irsa_role_name" {
-  type = string
-  default = "seqera-irsa-role"
+  type        = string
+  default     = "seqera-irsa-role"
   description = "The name of the IAM role for IRSA."
 }
 
 variable "seqera_irsa_iam_policy_name" {
-  type = string
+  type        = string
   description = "The name of the IAM policy for IRSA."
-  default = "seqera-irsa-iam-policy"
+  default     = "seqera-irsa-iam-policy"
 }
 
 ## Database

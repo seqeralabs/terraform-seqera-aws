@@ -54,30 +54,30 @@ module "vpc" {
 
 locals {
   eks_aws_auth_roles = distinct(flatten(
-      [
-        for role in var.eks_aws_auth_roles : [
-          {
-            rolearn  = role
-            username = element(split("/", role), 1)
-            groups = [
-              "system:masters"
-            ]
-          }
-        ]
+    [
+      for role in var.eks_aws_auth_roles : [
+        {
+          rolearn  = role
+          username = element(split("/", role), 1)
+          groups = [
+            "system:masters"
+          ]
+        }
       ]
+    ]
     )
   )
 
   eks_aws_auth_users = distinct(flatten(
-      [
-        for user in var.eks_aws_auth_users : [
-          {
-            userarn  = user
-            username = element(split("/", user), 1)
-            groups   = ["system:masters"]
-          }
-        ]
+    [
+      for user in var.eks_aws_auth_users : [
+        {
+          userarn  = user
+          username = element(split("/", user), 1)
+          groups   = ["system:masters"]
+        }
       ]
+    ]
     )
   )
 }
@@ -116,8 +116,8 @@ module "eks" {
   }
 
   manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
-  aws_auth_roles = local.eks_aws_auth_roles
-  aws_auth_users = local.eks_aws_auth_users
+  aws_auth_roles            = local.eks_aws_auth_roles
+  aws_auth_users            = local.eks_aws_auth_users
 
   tags = var.default_tags
 }
@@ -131,20 +131,22 @@ resource "kubernetes_namespace_v1" "this" {
 }
 
 resource "kubernetes_config_map_v1" "this" {
-  count = var.create_seqera_configmap ? 1 : 0 && var.create_seqera_namespace ? 1 : 0
+  count = var.create_seqera_configmap ? 1 : 0
 
   metadata {
-    name = var.seqera_configmap_name
+    name      = var.seqera_configmap_name
     namespace = var.seqera_namespace_name
   }
 
   data = {
-    TOWER_REDIS_URL: module.memory_db.cluster_endpoint_address
-    TOWER_DB_URL: module.db.db_instance_address
-    TOWER_DB_DRIVER: var.tower_db_driver
-    TOWER_DB_USER: var.db_username
-    TOWER_DB_PASSWORD: var.db_password
+    TOWER_REDIS_URL : module.memory_db.cluster_endpoint_address
+    TOWER_DB_URL : module.db.db_instance_address
+    TOWER_DB_DRIVER : var.tower_db_driver
+    TOWER_DB_USER : var.db_username
+    TOWER_DB_PASSWORD : var.db_password
   }
+
+  depends_on = [kubernetes_namespace_v1.this]
 }
 
 module "db_sg" {
@@ -252,12 +254,12 @@ module "memory_db" {
 }
 
 locals {
-  seqera_irsa_role_name = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_role_name       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
   seqera_irsa_iam_policy_name = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
 }
 
 module "seqera_iam_policy" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
 
   name        = local.seqera_irsa_iam_policy_name
   path        = "/"
@@ -267,9 +269,9 @@ module "seqera_iam_policy" {
 }
 
 module "seqera_irsa" {
-  source      = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name   = local.seqera_irsa_role_name
+  role_name = local.seqera_irsa_role_name
 
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
