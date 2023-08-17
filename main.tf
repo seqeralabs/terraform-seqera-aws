@@ -123,12 +123,16 @@ module "eks" {
 }
 
 resource "kubernetes_namespace_v1" "this" {
+  count = var.create_seqera_namespace ? 1 : 0
+
   metadata {
     name = var.seqera_namespace_name
   }
 }
 
 resource "kubernetes_config_map_v1" "this" {
+  count = var.create_seqera_configmap ? 1 : 0
+
   metadata {
     name = var.seqera_configmap_name
     namespace = var.seqera_namespace_name

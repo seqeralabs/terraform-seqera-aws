@@ -201,6 +201,18 @@ variable "seqera_namespace_name" {
   description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
+variable "create_seqera_namespace" {
+  type = bool 
+  default = true 
+  description = "Determines whether to create the Seqera namespace."
+}
+  
+variable "create_seqera_configmap" {
+  type = bool 
+  default = true 
+  description = "Determines whether to create the Seqera ConfigMap."
+}
+
 ## Seqera ConfigMap Name
 variable "seqera_configmap_name" {
   type = string 
