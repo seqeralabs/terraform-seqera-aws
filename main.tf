@@ -131,7 +131,7 @@ resource "kubernetes_namespace_v1" "this" {
 }
 
 resource "kubernetes_config_map_v1" "this" {
-  count = var.create_seqera_configmap ? 1 : 0
+  count = var.create_seqera_configmap ? 1 : 0 && var.create_seqera_namespace ? 1 : 0
 
   metadata {
     name = var.seqera_configmap_name
