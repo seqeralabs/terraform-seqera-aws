@@ -149,6 +149,19 @@ resource "kubernetes_config_map_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this]
 }
 
+resource "kubernetes_service_account_v1" "this" {
+  count = var.create_seqera_service_account ? 1 : 0
+
+  metadata {
+    name      = var.seqera_service_account_name
+    namespace = var.seqera_namespace_name
+  }
+
+  automount_service_account_token = true
+
+  depends_on = [kubernetes_namespace_v1.this]
+}
+
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
 

@@ -226,6 +226,12 @@ variable "tower_db_driver" {
   description = "The JDBC driver for the Tower database"
 }
 
+variable "create_seqera_service_account" {
+  type        = bool
+  default     = true
+  description = "Determines whether to create the Seqera service account."
+}
+
 ## Seqera Service Account Name
 variable "seqera_service_account_name" {
   type        = string
