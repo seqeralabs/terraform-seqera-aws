@@ -123,30 +123,11 @@ module "eks" {
 }
 
 resource "kubernetes_namespace_v1" "this" {
-  count = var.create_seqera_namespace ? 1 : 0 || var.create_seqera_configmap ? 1 : 0 || var.create_seqera_service_account ? 1 : 0
+  count = var.create_seqera_namespace ? 1 : 0 || var.create_seqera_service_account ? 1 : 0
 
   metadata {
     name = var.seqera_namespace_name
   }
-}
-
-resource "kubernetes_config_map_v1" "this" {
-  count = var.create_seqera_configmap ? 1 : 0
-
-  metadata {
-    name      = var.seqera_configmap_name
-    namespace = var.seqera_namespace_name
-  }
-
-  data = {
-    TOWER_REDIS_URL : module.memory_db.cluster_endpoint_address
-    TOWER_DB_URL : module.db.db_instance_address
-    TOWER_DB_DRIVER : var.tower_db_driver
-    TOWER_DB_USER : var.db_username
-    TOWER_DB_PASSWORD : var.db_password
-  }
-
-  depends_on = [kubernetes_namespace_v1.this]
 }
 
 resource "kubernetes_service_account_v1" "this" {

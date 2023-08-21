@@ -207,25 +207,6 @@ variable "create_seqera_namespace" {
   description = "Determines whether to create the Seqera namespace."
 }
 
-variable "create_seqera_configmap" {
-  type        = bool
-  default     = true
-  description = "Determines whether to create the Seqera ConfigMap."
-}
-
-## Seqera ConfigMap Name
-variable "seqera_configmap_name" {
-  type        = string
-  default     = "seqera-configmap"
-  description = "The name of the ConfigMap used to deploy Seqera platform manifests."
-}
-
-variable "tower_db_driver" {
-  type        = string
-  default     = "org.mariadb.jdbc.Driver"
-  description = "The JDBC driver for the Tower database"
-}
-
 variable "create_seqera_service_account" {
   type        = bool
   default     = true
