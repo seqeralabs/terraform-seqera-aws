@@ -145,17 +145,17 @@ resource "kubernetes_service_account_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this]
 }
 
-resource "null_resource" "ingress_crd" {
-  count = var.enable_aws_loadbalancer_controller ? 1 : 0
+# resource "null_resource" "ingress_crd" {
+#   count = var.enable_aws_loadbalancer_controller ? 1 : 0
 
-  provisioner "local-exec" {
-    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.aws_profile} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
-  }
+#   provisioner "local-exec" {
+#     command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.aws_profile} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
+#   }
 
-  depends_on = [
-    module.eks
-  ]
-}
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
 resource "helm_release" "aws-load-balancer-controller" {
   count = var.enable_aws_loadbalancer_controller ? 1 : 0
@@ -194,7 +194,6 @@ resource "helm_release" "aws-load-balancer-controller" {
   }
 
   depends_on = [
-    null_resource.ingress_crd,
     module.eks
   ]
 }
