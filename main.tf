@@ -149,7 +149,7 @@ resource "null_resource" "ingress_crd" {
   count = var.enable_aws_loadbalancer_controller ? 1 : 0
 
   provisioner "local-exec" {
-    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.environment} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
+    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.aws_profile} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
   }
 
   depends_on = [
