@@ -143,6 +143,60 @@ resource "kubernetes_service_account_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this]
 }
 
+resource "null_resource" "ingress_crd" {
+  count = enable_aws_loadbalancer_controller ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.environment} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
+  }
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "helm_release" "aws-load-balancer-controller" {
+  count = enable_aws_loadbalancer_controller ? 1 : 0
+
+  name            = "aws-load-balancer-controller"
+  repository      = "https://aws.github.io/eks-charts"
+  chart           = "aws-load-balancer-controller"
+  namespace       = "kube-system"
+  atomic          = true
+  cleanup_on_fail = true
+  replace         = true
+
+  set {
+    name  = "clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = false
+  }
+
+  set {
+    name = serviceAccount.name
+    value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "region"
+    value = var.region
+  }
+
+  set {
+    name  = "vpcId"
+    value = module.vpc.vpc_id
+  }
+
+  depends_on = [
+    null_resource.ingress_crd,
+    module.eks
+  ]
+}
+
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
 

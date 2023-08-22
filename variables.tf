@@ -41,6 +41,13 @@ variable "vpc_cidr" {
   description = "The CIDR block for the VPC."
 }
 
+## AWS LoadBalancer Controller
+variable "enable_aws_loadbalancer_controller" {
+  type        = bool
+  default     = true
+  description = "Determines whether the AWS LoadBalancer Controller should be deployed."
+}
+
 ## Cluster Endpoint Public Access
 variable "eks_cluster_endpoint_public_access" {
   type        = bool
