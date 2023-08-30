@@ -27,7 +27,7 @@ module "terraform-seqera-module" {
   region  = "eu-west-2"
 
   ## VPC
-  vpc_name = "my-tower-tf-vpc"
+  vpc_name = "my-seqera-tf-vpc"
   vpc_cidr = "10.0.0.0/16"
 
   azs                 = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
@@ -38,7 +38,7 @@ module "terraform-seqera-module" {
   intra_subnets       = ["10.0.110.0/24", "10.0.111.0/24", "10.0.112.0/24"]
 
   ## EKS
-  cluster_name    = "my-tower-tf-cluster"
+  cluster_name    = "my-seqera-tf-cluster"
   cluster_version = "1.27"
   eks_managed_node_group_defaults_instance_types = ["t3.medium"]
   eks_managed_node_group_defaults_capacity_type = "ON_DEMAND"
@@ -57,7 +57,7 @@ module "terraform-seqera-module" {
   default_tags = {
     Environment = "myenvironment"
     ManagedBy   = "Terraform"
-    Product     = "Tower"
+    Product     = "Seqera"
     CreatedBy   = "DevOps"
   }
 }
