@@ -57,6 +57,18 @@ module "vpc" {
   elasticache_subnets = var.elasticache_subnets
   intra_subnets       = var.intra_subnets
 
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    "kubernetes.io/cluster/CLUSTER_NAME"        = var.cluster_name
+    "kubernetes.io/role/internal-elb"           = "1"
+  }
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    "kubernetes.io/cluster/CLUSTER_NAME"        = var.cluster_name
+    "kubernetes.io/role/elb"                    = "1"
+  }
+
   create_database_subnet_group       = var.create_database_subnet_group
   create_elasticache_subnet_group    = var.create_elasticache_subnet_group
   create_database_subnet_route_table = var.create_database_subnet_route_table
