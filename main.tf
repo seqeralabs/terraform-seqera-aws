@@ -155,6 +155,9 @@ resource "kubernetes_service_account_v1" "this" {
   metadata {
     name      = var.seqera_service_account_name
     namespace = var.seqera_namespace_name
+    annotations = {
+      "eks.amazonaws.com/role-arn" = module.seqera_irsa.iam_role_arn
+    }
   }
 
   automount_service_account_token = true
