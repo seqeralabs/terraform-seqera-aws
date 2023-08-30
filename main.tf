@@ -11,6 +11,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
+  debug           = true 
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -117,6 +118,8 @@ module "eks" {
     }
   }
 
+  iam_role_additional_policies = local.additional_policies
+
   manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
   aws_auth_roles            = local.eks_aws_auth_roles
   aws_auth_users            = local.eks_aws_auth_users
@@ -145,17 +148,30 @@ resource "kubernetes_service_account_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this]
 }
 
-# resource "null_resource" "ingress_crd" {
-#   count = var.enable_aws_loadbalancer_controller ? 1 : 0
+resource "null_resource" "ingress_crd" {
+  count = var.enable_aws_loadbalancer_controller ? 1 : 0
 
-#   provisioner "local-exec" {
-#     command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.aws_profile} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master'"
-#   }
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --profile ${var.aws_profile} && kubectl apply -k 'github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master'"
+  }
 
-#   depends_on = [
-#     module.eks
-#   ]
-# }
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "helm_release" "aws-ebs-csi-driver" {
+  count = var.enable_ebs_csi_driver ? 1 : 0
+
+  name       = "aws-ebs-csi-driver"
+  repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver/"
+  chart      = "aws-ebs-csi-driver"
+  namespace  = "kube-system"
+  version    = var.ebs_csi_driver_version
+  replace    = true
+  atomic = true 
+  wait = true 
+}
 
 resource "helm_release" "aws-load-balancer-controller" {
   count = var.enable_aws_loadbalancer_controller ? 1 : 0
@@ -164,6 +180,7 @@ resource "helm_release" "aws-load-balancer-controller" {
   repository      = "https://aws.github.io/eks-charts"
   chart           = "aws-load-balancer-controller"
   namespace       = "kube-system"
+  version         = var.aws_loadbalancer_controller_version 
   atomic          = true
   cleanup_on_fail = true
   replace         = true
@@ -176,11 +193,6 @@ resource "helm_release" "aws-load-balancer-controller" {
   set {
     name  = "serviceAccount.create"
     value = false
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
   }
 
   set {
@@ -306,6 +318,17 @@ module "memory_db" {
 locals {
   seqera_irsa_role_name       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
   seqera_irsa_iam_policy_name = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
+  aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}"
+  ebs_csi_driver_iam_policy_name = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
+
+  additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
+  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+  } : var.enable_ebs_csi_driver && !var.enable_aws_loadbalancer_controller ? {
+    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
+  } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {} : {}
 }
 
 module "seqera_iam_policy" {
@@ -316,6 +339,34 @@ module "seqera_iam_policy" {
   description = "This policy provide the permissions needed for seqera service account to be able to interact with the required AWS services."
 
   policy = var.seqera_platform_service_account_iam_policy
+
+  tags = var.default_tags
+}
+
+module "aws_loadbalancer_controller_iam_policy" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  count = var.enable_aws_loadbalancer_controller ? 1 : 0
+
+  name        = local.aws_loadbalancer_controller_iam_policy_name
+  path        = "/"
+  description = "This policy provide the permissions needed for AWS loadBalancer controller"
+
+  policy = var.aws_loadbalancer_controller_iam_policy
+
+  tags = var.default_tags
+}
+
+module "ebs_csi_driver_iam_policy" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  count = var.enable_ebs_csi_driver ? 1 : 0
+
+  name        = local.ebs_csi_driver_iam_policy_name
+  path        = "/"
+  description = "This policy provide the permissions needed for EBS CSI driver"
+
+  policy = var.ebs_csi_driver_iam_policy
+
+  tags = var.default_tags
 }
 
 module "seqera_irsa" {
