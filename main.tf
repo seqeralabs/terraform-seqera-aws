@@ -10,6 +10,20 @@ provider "kubernetes" {
   }
 }
 
+provider "kubectl" {
+  apply_retry_count      = 5
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  load_config_file       = false
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    # This requires the awscli to be installed locally where Terraform is executed
+    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws_profile, "--region", var.region]
+  }
+}
+
 provider "helm" {
   debug = true
   kubernetes {
@@ -160,6 +174,92 @@ resource "null_resource" "ingress_crd" {
   ]
 }
 
+resource "helm_release" "karpenter" {
+  count = var.install_karpenter ? 1 : 0
+
+  name             = "karpenter"
+  repository       = "oci://public.ecr.aws/karpenter"
+  chart            = "karpenter"
+  namespace        = "karpenter"
+  create_namespace = true
+  version          = var.karpenter_version
+  replace          = true
+  atomic           = true
+  wait             = true
+
+  set {
+    name  = "settings.aws.clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "settings.aws.clusterEndpoint"
+    value = module.eks.cluster_endpoint
+  }
+
+  set {
+    name  = "settings.aws.defaultInstanceProfile"
+    value = "KarpenterNodeInstanceProfile-${module.eks.cluster_name}"
+  }
+
+  set {
+    name  = "settings.aws.interruptionQueueName"
+    value = module.eks.cluster_name
+  }
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_provisioner" {
+  count = var.install_karpenter ? 1 : 0
+
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1alpha5
+    kind: Provisioner
+    metadata:
+      name: default
+    spec:
+      requirements:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot"]
+      limits:
+        resources:
+          cpu: 1000
+      providerRef:
+        name: default
+      ttlSecondsAfterEmpty: 30
+  YAML
+
+  depends_on = [
+    helm_release.karpenter
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_node_template" {
+  count = var.install_karpenter ? 1 : 0
+
+  yaml_body = <<-YAML
+    apiVersion: karpenter.k8s.aws/v1alpha1
+    kind: AWSNodeTemplate
+    metadata:
+      name: default
+    spec:
+      subnetSelector:
+        karpenter.sh/discovery: ${module.eks.cluster_name}
+      securityGroupSelector:
+        karpenter.sh/discovery: ${module.eks.cluster_name}
+      tags:
+        karpenter.sh/discovery: ${module.eks.cluster_name}
+  YAML
+
+  depends_on = [
+    helm_release.karpenter
+  ]
+}
+
 resource "helm_release" "aws-ebs-csi-driver" {
   count = var.enable_ebs_csi_driver ? 1 : 0
 
@@ -171,6 +271,10 @@ resource "helm_release" "aws-ebs-csi-driver" {
   replace    = true
   atomic     = true
   wait       = true
+
+  depends_on = [
+    module.eks
+  ]
 }
 
 resource "helm_release" "aws-load-balancer-controller" {

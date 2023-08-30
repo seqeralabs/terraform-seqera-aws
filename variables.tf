@@ -77,7 +77,7 @@ variable "eks_cluster_addons" {
 ## EKS Managed Node Group - Minimum Size
 variable "eks_managed_node_group_min_size" {
   type        = number
-  default     = 1
+  default     = 2
   description = "The minimum size of the EKS managed node group."
 }
 
@@ -97,6 +97,18 @@ variable "eks_aws_auth_users" {
   type        = list(string)
   default     = []
   description = "List of users ARNs to add to the aws-auth config map"
+}
+
+variable "install_karpenter" {
+  type        = bool
+  default     = false
+  description = "Determines whether to install Karpenter"
+}
+
+variable "karpenter_version" {
+  type        = string
+  default     = "v0.30.0-rc.0"
+  description = "Karpenter version"
 }
 
 variable "aws_loadbalancer_controller_iam_policy_name" {
@@ -498,14 +510,14 @@ variable "eks_enable_irsa" {
 ## EKS Managed Node Group - Maximum Size
 variable "eks_managed_node_group_max_size" {
   type        = number
-  default     = 5
+  default     = 4
   description = "The maximum size of the EKS managed node group."
 }
 
 ## EKS Managed Node Group - Desired Size
 variable "eks_managed_node_group_desired_size" {
   type        = number
-  default     = 1
+  default     = 2
   description = "The desired size of the EKS managed node group."
 }
 
