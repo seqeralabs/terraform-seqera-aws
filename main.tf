@@ -11,7 +11,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  debug           = true 
+  debug = true
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -169,8 +169,8 @@ resource "helm_release" "aws-ebs-csi-driver" {
   namespace  = "kube-system"
   version    = var.ebs_csi_driver_version
   replace    = true
-  atomic = true 
-  wait = true 
+  atomic     = true
+  wait       = true
 }
 
 resource "helm_release" "aws-load-balancer-controller" {
@@ -180,7 +180,7 @@ resource "helm_release" "aws-load-balancer-controller" {
   repository      = "https://aws.github.io/eks-charts"
   chart           = "aws-load-balancer-controller"
   namespace       = "kube-system"
-  version         = var.aws_loadbalancer_controller_version 
+  version         = var.aws_loadbalancer_controller_version
   atomic          = true
   cleanup_on_fail = true
   replace         = true
@@ -316,17 +316,17 @@ module "memory_db" {
 }
 
 locals {
-  seqera_irsa_role_name       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
-  seqera_irsa_iam_policy_name = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}"
-  ebs_csi_driver_iam_policy_name = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
+  ebs_csi_driver_iam_policy_name              = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
 
   additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
-    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
-  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {
+    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
-  } : var.enable_ebs_csi_driver && !var.enable_aws_loadbalancer_controller ? {
+    } : var.enable_ebs_csi_driver && !var.enable_aws_loadbalancer_controller ? {
     ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
   } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {} : {}
 }
@@ -345,7 +345,7 @@ module "seqera_iam_policy" {
 
 module "aws_loadbalancer_controller_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count = var.enable_aws_loadbalancer_controller ? 1 : 0
+  count  = var.enable_aws_loadbalancer_controller ? 1 : 0
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
   path        = "/"
@@ -358,7 +358,7 @@ module "aws_loadbalancer_controller_iam_policy" {
 
 module "ebs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count = var.enable_ebs_csi_driver ? 1 : 0
+  count  = var.enable_ebs_csi_driver ? 1 : 0
 
   name        = local.ebs_csi_driver_iam_policy_name
   path        = "/"

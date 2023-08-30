@@ -100,20 +100,20 @@ variable "eks_aws_auth_users" {
 }
 
 variable "aws_loadbalancer_controller_iam_policy_name" {
-  type = string 
-  default = "aws-loadbalancer-controller-iam-policy"
+  type        = string
+  default     = "aws-loadbalancer-controller-iam-policy"
   description = "The name of the IAM policy for the AWS LoadBalancer Controller"
 }
 
 variable "aws_loadbalancer_controller_version" {
-  type = string 
-  default = "1.6.0"
+  type        = string
+  default     = "1.6.0"
   description = "The version of the AWS LoadBalancer Controller to deploy"
 }
 
 variable "aws_loadbalancer_controller_iam_policy" {
-  type = string
-  default = <<EOF
+  type        = string
+  default     = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -620,8 +620,8 @@ variable "enable_ebs_csi_driver" {
 }
 
 variable "ebs_csi_driver_version" {
-  type = string
-  default = "2.13.0"
+  type        = string
+  default     = "2.13.0"
   description = "The version of the EBS CSI driver to deploy."
 }
 
@@ -632,9 +632,9 @@ variable "ebs_csi_driver_iam_policy_name" {
 }
 
 variable "ebs_csi_driver_iam_policy" {
-  type = string
+  type        = string
   description = "IAM policy for the EBS CSI driver"
-  default = <<EOF
+  default     = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
