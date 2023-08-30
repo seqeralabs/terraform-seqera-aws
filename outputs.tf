@@ -1,4 +1,14 @@
-output "tower_irsa_iam_role_name" {
-  description = "The name of the IAM role created for the Tower service account"
-  value       = try(module.eks.aws_iam_role.this[0].name, null)
+output "database_url" {
+  value       = module.db.db_instance_address
+  description = "Database URL"
+}
+
+output "redis_url" {
+  value       = module.memory_db.cluster_endpoint_address
+  description = "Redis URL"
+}
+
+output "seqera_irsa_role_name" {
+  value       = module.seqera_irsa.iam_role_name
+  description = "Seqera IRSA Role Name"
 }

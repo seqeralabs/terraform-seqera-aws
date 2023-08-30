@@ -20,6 +20,7 @@ Follow the steps below to deploy the infrastructure:
 
 Example:
 ```
+## Module
 module "terraform-seqera-module" {
   source  = "github.com/seqeralabs/terraform-seqera-module"
   aws_profile = "my-aws-profile"
@@ -58,6 +59,19 @@ module "terraform-seqera-module" {
     Product     = "Tower"
     CreatedBy   = "DevOps"
   }
+}
+
+## Outputs
+output "database_url" {
+  value = module.terraform-seqera-module.database_url
+}
+
+output "redis_url" {
+  value = module.terraform-seqera-module.redis_url
+}
+
+output "seqera_irsa_role_name" {
+  value = module.terraform-seqera-module.seqera_irsa_role_name
 }
 ```
 
@@ -234,4 +248,6 @@ This Terraform code is licensed under the Apache License
 
 | Name | Description |
 |------|-------------|
-| <a name="output_tower_irsa_iam_role_name"></a> [tower\_irsa\_iam\_role\_name](#output\_tower\_irsa\_iam\_role\_name) | The name of the IAM role created for the Tower service account |
+| <a name="output_database_url"></a> [database\_url](#output\_database\_url) | Database URL |
+| <a name="output_redis_url"></a> [redis\_url](#output\_redis\_url) | Redis URL |
+| <a name="output_seqera_irsa_role_name"></a> [seqera\_irsa\_role\_name](#output\_seqera\_irsa\_role\_name) | Seqera IRSA Role Name |
