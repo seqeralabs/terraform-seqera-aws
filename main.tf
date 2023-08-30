@@ -118,7 +118,8 @@ module "eks" {
 
   # EKS Managed Node Group(s)
   eks_managed_node_group_defaults = {
-    instance_types = var.eks_managed_node_group_defaults_instance_types
+    instance_types               = var.eks_managed_node_group_defaults_instance_types
+    iam_role_additional_policies = local.additional_policies
   }
 
   eks_managed_node_groups = {
