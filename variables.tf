@@ -1025,7 +1025,18 @@ variable "redis_num_replicas_per_shard" {
 variable "redis_tls_enabled" {
   type        = bool
   description = "Determines whether TLS (Transport Layer Security) is enabled for Redis."
-  default     = true
+  default     = false
+}
+
+variable "redis_create_acl" {
+  type        = bool
+  default     = false
+  description = "Determines whether an ACL should be created for Redis."
+}
+
+variable "redis_acl_name" {
+  type    = string
+  default = "open-access"
 }
 
 ## Redis Maintenance Window

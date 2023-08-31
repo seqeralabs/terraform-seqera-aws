@@ -419,9 +419,11 @@ module "memory_db" {
   maintenance_window       = var.redis_maintenance_window
   snapshot_retention_limit = var.redis_snapshot_retention_limit
   snapshot_window          = var.redis_snapshot_window
+  create_acl               = var.redis_create_acl
+  acl_name                 = var.redis_create_acl ? var.redis_acl_name : "open-access"
 
   # Users
-  users = var.redis_users
+  users = var.redis_create_acl ? var.redis_users : {}
 
   # Parameter group
   parameter_group_name        = var.redis_parameter_group_name
