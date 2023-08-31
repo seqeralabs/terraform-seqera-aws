@@ -186,9 +186,11 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_engine_version"></a> [db\_engine\_version](#input\_db\_engine\_version) | The version of the database engine. | `string` | `"5.7"` | no |
 | <a name="input_db_family"></a> [db\_family](#input\_db\_family) | The family of the database engine. | `string` | `"mysql5.7"` | no |
 | <a name="input_db_iam_database_authentication_enabled"></a> [db\_iam\_database\_authentication\_enabled](#input\_db\_iam\_database\_authentication\_enabled) | Determines whether IAM database authentication is enabled for the database. | `bool` | `false` | no |
+| <a name="input_db_ingress_rule"></a> [db\_ingress\_rule](#input\_db\_ingress\_rule) | The ingress rule for the database. | `string` | `"mysql-tcp"` | no |
 | <a name="input_db_instance_class"></a> [db\_instance\_class](#input\_db\_instance\_class) | The instance class for the database. | `string` | `"db.r5.xlarge"` | no |
 | <a name="input_db_maintenance_window"></a> [db\_maintenance\_window](#input\_db\_maintenance\_window) | The maintenance window for the database. | `string` | `"Mon:00:00-Mon:03:00"` | no |
 | <a name="input_db_major_engine_version"></a> [db\_major\_engine\_version](#input\_db\_major\_engine\_version) | The major version of the database engine. | `string` | `"5.7"` | no |
+| <a name="input_db_manage_master_user_password"></a> [db\_manage\_master\_user\_password](#input\_db\_manage\_master\_user\_password) | Determines whether the master user password should be managed. | `bool` | `false` | no |
 | <a name="input_db_monitoring_interval"></a> [db\_monitoring\_interval](#input\_db\_monitoring\_interval) | The monitoring interval for the database. | `string` | `"0"` | no |
 | <a name="input_db_monitoring_role_name"></a> [db\_monitoring\_role\_name](#input\_db\_monitoring\_role\_name) | The name of the IAM role used for database monitoring. | `string` | `"SeqeraRDSMonitoringRole"` | no |
 | <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"seqera"` | no |
@@ -228,6 +230,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_redis_cluster_name"></a> [redis\_cluster\_name](#input\_redis\_cluster\_name) | The name of the Redis cluster. | `string` | `"seqera-redis"` | no |
 | <a name="input_redis_create_subnet_group"></a> [redis\_create\_subnet\_group](#input\_redis\_create\_subnet\_group) | Determines whether to create a Redis subnet group. | `bool` | `true` | no |
 | <a name="input_redis_engine_version"></a> [redis\_engine\_version](#input\_redis\_engine\_version) | The version of the Redis engine. | `string` | `"6.2"` | no |
+| <a name="input_redis_ingress_rule"></a> [redis\_ingress\_rule](#input\_redis\_ingress\_rule) | The ingress rule for the Redis cluster. | `string` | `"redis-tcp"` | no |
 | <a name="input_redis_maintenance_window"></a> [redis\_maintenance\_window](#input\_redis\_maintenance\_window) | The maintenance window for the Redis cluster. | `string` | `"sun:23:00-mon:01:30"` | no |
 | <a name="input_redis_node_type"></a> [redis\_node\_type](#input\_redis\_node\_type) | The Redis node type. | `string` | `"db.t4g.small"` | no |
 | <a name="input_redis_num_replicas_per_shard"></a> [redis\_num\_replicas\_per\_shard](#input\_redis\_num\_replicas\_per\_shard) | The number of replicas per shard in the Redis cluster. | `number` | `2` | no |
