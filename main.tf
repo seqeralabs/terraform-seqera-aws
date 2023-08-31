@@ -74,7 +74,6 @@ module "vpc" {
   create_database_subnet_route_table = var.create_database_subnet_route_table
   one_nat_gateway_per_az             = var.one_nat_gateway_per_az
 
-
   enable_nat_gateway = var.enable_nat_gateway
   enable_vpn_gateway = var.enable_vpn_gateway
 
@@ -132,6 +131,7 @@ module "eks" {
   eks_managed_node_group_defaults = {
     instance_types               = var.eks_managed_node_group_defaults_instance_types
     iam_role_additional_policies = local.additional_policies
+    subnet_ids                   = module.vpc.private_subnets
   }
 
   eks_managed_node_groups = {
@@ -142,6 +142,7 @@ module "eks" {
 
       instance_types = var.eks_managed_node_group_defaults_instance_types
       capacity_type  = var.eks_managed_node_group_defaults_capacity_type
+      subnet_ids     = module.vpc.private_subnets
     }
   }
 
@@ -338,6 +339,7 @@ module "db_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  ingress_rules       = [var.db_ingress_rule]
 }
 
 module "redis_sg" {
@@ -348,12 +350,14 @@ module "redis_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  ingress_rules       = [var.redis_ingress_rule]
 }
 
 module "db" {
   source = "terraform-aws-modules/rds/aws"
 
-  identifier = var.database_identifier
+  identifier                  = var.database_identifier
+  manage_master_user_password = var.db_manage_master_user_password
 
   engine              = "mysql"
   engine_version      = var.db_engine_version

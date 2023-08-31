@@ -870,6 +870,18 @@ variable "db_port" {
   description = "The port for the database."
 }
 
+variable "db_ingress_rule" {
+  type        = string
+  default     = "mysql-tcp"
+  description = "The ingress rule for the database."
+}
+
+variable "db_manage_master_user_password" {
+  type        = bool
+  default     = false
+  description = "Determines whether the master user password should be managed."
+}
+
 variable "db_iam_database_authentication_enabled" {
   type        = bool
   default     = false
@@ -1035,6 +1047,12 @@ variable "redis_snapshot_window" {
   type        = string
   description = "The window during which Redis snapshots are taken."
   default     = "05:00-09:00"
+}
+
+variable "redis_ingress_rule" {
+  type        = string
+  default     = "redis-tcp"
+  description = "The ingress rule for the Redis cluster."
 }
 
 ## Redis Users
