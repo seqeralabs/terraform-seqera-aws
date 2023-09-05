@@ -100,8 +100,8 @@ variable "eks_aws_auth_users" {
 }
 
 variable "enable_aws_cluster_autoscaler" {
-  type       = bool
-  default    = true
+  type        = bool
+  default     = true
   description = "Determines whether the AWS Cluster Autoscaler should be deployed."
 }
 
@@ -112,8 +112,8 @@ variable "aws_cluster_autoscaler_version" {
 }
 
 variable "aws_cluster_autoscaler_iam_policy_name" {
-  type = string
-  default = "aws-cluster-autoscaler-iam-policy"
+  type        = string
+  default     = "aws-cluster-autoscaler-iam-policy"
   description = "The name of the IAM policy for the AWS Cluster Autoscaler."
 }
 

@@ -192,7 +192,7 @@ resource "helm_release" "aws_cluster_autoscaler" {
   wait       = true
 
   set {
-    name = "autoDiscovery.clusterName"
+    name  = "autoDiscovery.clusterName"
     value = module.eks.cluster_name
   }
 
@@ -224,7 +224,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
 }
 
 resource "kubectl_manifest" "aws_loadbalancer_controller_crd" {
-    yaml_body = <<YAML
+  yaml_body = <<YAML
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -977,30 +977,30 @@ locals {
   aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
   ebs_csi_driver_iam_policy_name              = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
 
-# This code now has 7 conditions, where each one is an individual combination of the three boolean variables 
-# (var.enable_aws_loadbalancer_controller, var.enable_ebs_csi_driver, and var.enable_aws_cluster_autoscaler). 
-# The last condition simply defaults to an empty map if none of the three are enabled.
+  # This code now has 7 conditions, where each one is an individual combination of the three boolean variables 
+  # (var.enable_aws_loadbalancer_controller, var.enable_ebs_csi_driver, and var.enable_aws_cluster_autoscaler). 
+  # The last condition simply defaults to an empty map if none of the three are enabled.
 
-additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+  additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
-  } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
-  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
-  } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
-    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
-    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
-  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
-    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
-  } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
-    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
-  } :!var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    ebs_csi_driver_iam_policy         = module.ebs_csi_driver_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
-  } : {}  # This last case covers the scenario where none of the three are enabled
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : {} # This last case covers the scenario where none of the three are enabled
 }
 
 module "seqera_iam_policy" {
