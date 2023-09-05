@@ -223,7 +223,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
   ]
 }
 
-resource "kubectl_manifest" "aws_loadbalancer_controller_cdr" {
+resource "kubectl_manifest" "aws_loadbalancer_controller_crd" {
     yaml_body = <<YAML
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -856,7 +856,7 @@ resource "helm_release" "aws-load-balancer-controller" {
 
   depends_on = [
     module.eks,
-    kubectl_manifest.aws_loadbalancer_controller_cdr
+    kubectl_manifest.aws_loadbalancer_controller_crd
   ]
 }
 
