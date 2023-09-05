@@ -860,6 +860,77 @@ resource "helm_release" "aws-load-balancer-controller" {
   ]
 }
 
+resource "aws_efs_file_system" "eks_efs" {
+  count            = var.enable_aws_efs_csi_driver ? 1 : 0
+  creation_token   = var.aws_efs_csi_driver_creation_token
+  performance_mode = var.aws_efs_csi_driver_performance_mode
+
+  tags = {
+    Name = var.cluster_name
+  }
+}
+
+resource "aws_efs_backup_policy" "eks_efs" {
+  count          = var.enable_aws_efs_csi_driver ? 1 : 0
+  file_system_id = aws_efs_file_system.eks_efs[0].id
+
+  backup_policy {
+    status = var.aws_efs_csi_driver_backup_policy_status
+  }
+}
+
+resource "aws_efs_mount_target" "eks_efs_mount_target" {
+  count           = var.enable_aws_efs_csi_driver ? length(module.vpc.private_subnets) : 0
+  file_system_id  = aws_efs_file_system.eks_efs[0].id
+  subnet_id       = element(module.vpc.private_subnets, count.index)
+  security_groups = [module.efs_sg[0].security_group_id]
+}
+
+resource "aws_efs_access_point" "eks_efs_access_point" {
+  file_system_id = aws_efs_file_system.eks_efs[0].id
+}
+
+resource "kubernetes_storage_class" "efs_storage_class" {
+  count = var.enable_aws_efs_csi_driver ? 1 : 0
+  metadata {
+    name = var.aws_efs_csi_driver_storage_class_name
+  }
+
+  storage_provisioner = var.aws_efs_csi_driver_storage_class_storage_provisioner
+  reclaim_policy      = var.aws_efs_csi_driver_storage_class_reclaim_policy
+
+
+  parameters = {
+    provisioningMode = var.aws_efs_csi_driver_storage_class_parameters["provisioningMode"]
+    fileSystemId     = aws_efs_file_system.eks_efs[0].id
+    directoryPerms   = var.aws_efs_csi_driver_storage_class_parameters["directoryPerms"]
+    gidRangeStart    = var.aws_efs_csi_driver_storage_class_parameters["gidRangeStart"]
+    gidRangeEnd      = var.aws_efs_csi_driver_storage_class_parameters["gidRangeEnd"]
+    basePath         = var.aws_efs_csi_driver_storage_class_parameters["basePath"]
+  }
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "helm_release" "aws-efs-csi-driver" {
+  count           = var.enable_aws_efs_csi_driver ? 1 : 0
+  name            = "aws-efs-csi-driver"
+  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"
+  chart           = "aws-efs-csi-driver"
+  namespace       = "kube-system"
+  replace         = true
+  version         = var.aws_efs_csi_driver_version
+  atomic          = true
+  cleanup_on_fail = true
+
+  set {
+    name  = "controller.serviceAccount.create"
+    value = true
+  }
+}
+
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -880,6 +951,19 @@ module "redis_sg" {
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
   ingress_rules       = [var.redis_ingress_rule]
+}
+
+module "efs_sg" {
+  count  = var.enable_aws_efs_csi_driver ? 1 : 0
+  source = "terraform-aws-modules/security-group/aws"
+
+  name        = var.aws_efs_csi_driver_security_group_name
+  description = "Security group for access from seqera EKS cluster to seqera redis"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name]
+  egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks
 }
 
 module "db" {
@@ -975,32 +1059,59 @@ locals {
   seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
+  aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
   ebs_csi_driver_iam_policy_name              = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
 
   # This code now has 7 conditions, where each one is an individual combination of the three boolean variables 
   # (var.enable_aws_loadbalancer_controller, var.enable_ebs_csi_driver, and var.enable_aws_cluster_autoscaler). 
   # The last condition simply defaults to an empty map if none of the three are enabled.
 
-  additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+  additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
-    } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    aws_efs_csi_driver_iam_policy          = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
-    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
+    aws_efs_csi_driver_iam_policy          = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
-    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    aws_efs_csi_driver_iam_policy          = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
     ebs_csi_driver_iam_policy         = module.ebs_csi_driver_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
-    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    aws_efs_csi_driver_iam_policy     = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
-    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
-    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
-    } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    aws_efs_csi_driver_iam_policy          = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
+    ebs_csi_driver_iam_policy         = module.ebs_csi_driver_iam_policy[0].arn
     aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
-  } : {} # This last case covers the scenario where none of the three are enabled
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
+    ebs_csi_driver_iam_policy     = module.ebs_csi_driver_iam_policy[0].arn
+    aws_efs_csi_driver_iam_policy = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && var.enable_aws_efs_csi_driver ? {
+    aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
+    aws_efs_csi_driver_iam_policy     = module.aws_efs_csi_driver_iam_policy[0].arn
+    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
+    ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
+    } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler && !var.enable_aws_efs_csi_driver ? {
+    aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : {} # This last case covers the scenario where none of the four are enabled, and we simply default to an empty map
 }
 
 module "seqera_iam_policy" {
@@ -1024,6 +1135,19 @@ module "aws_loadbalancer_controller_iam_policy" {
   description = "This policy provide the permissions needed for AWS loadBalancer controller"
 
   policy = var.aws_loadbalancer_controller_iam_policy
+
+  tags = var.default_tags
+}
+
+module "aws_efs_csi_driver_iam_policy" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  count  = var.enable_aws_efs_csi_driver ? 1 : 0
+
+  name        = local.aws_efs_csi_driver_iam_policy_name
+  path        = "/"
+  description = "This policy provide the permissions needed for AWS EFS CSI driver"
+
+  policy = var.aws_efs_csi_driver_iam_policy
 
   tags = var.default_tags
 }

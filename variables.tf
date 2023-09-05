@@ -153,6 +153,140 @@ variable "aws_cluster_autoscaler_iam_policy" {
 EOF
 }
 
+variable "enable_aws_efs_csi_driver" {
+  type        = bool
+  default     = true
+  description = "Determines whether the AWS EFS CSI driver should be deployed."
+}
+
+variable "aws_efs_csi_driver_security_group_name" {
+  type        = string
+  default     = "aws-efs-csi-driver-sg"
+  description = "The name of the security group for the AWS EFS CSI driver."
+}
+
+variable "aws_efs_csi_driver_security_group_ingress_rule_name" {
+  type        = string
+  default     = "nfs-tcp"
+  description = "The name of the security group ingress rule for the AWS EFS CSI driver."
+}
+
+variable "aws_efs_csi_driver_version" {
+  type        = string
+  default     = "2.4.9"
+  description = "The version of the AWS EFS CSI driver to deploy."
+}
+
+variable "aws_efs_csi_driver_iam_policy_name" {
+  type        = string
+  default     = "aws-efs-csi-driver-iam-policy"
+  description = "The name of the IAM policy for the AWS EFS CSI driver."
+}
+
+variable "aws_efs_csi_driver_creation_token" {
+  type        = string
+  default     = "seqera-efs-csi-driver"
+  description = "The creation token for the EFS file system."
+}
+
+variable "aws_efs_csi_driver_performance_mode" {
+  type        = string
+  default     = "generalPurpose"
+  description = "The performance mode of the EFS file system."
+}
+
+variable "aws_efs_csi_driver_backup_policy_status" {
+  type        = string
+  default     = "ENABLED"
+  description = "The backup policy status of the EFS file system."
+}
+
+variable "aws_efs_csi_driver_storage_class_name" {
+  type        = string
+  default     = "efs-sc"
+  description = "The name of the storage class for the EFS file system."
+}
+
+variable "aws_efs_csi_driver_storage_class_reclaim_policy" {
+  type        = string
+  default     = "Retain"
+  description = "The reclaim policy for the EFS file system."
+}
+
+variable "aws_efs_csi_driver_storage_class_parameters" {
+  type = map(string)
+  default = {
+    provisioningMode = "efs-ap"
+    directoryPerms   = "700"
+    gidRangeStart    = "1000"
+    gidRangeEnd      = "2000"
+    basePath         = "/dynamic_provisioning"
+  }
+  description = "The parameters for the storage class for the EFS file system."
+}
+
+variable "aws_efs_csi_driver_storage_class_storage_provisioner" {
+  type        = string
+  default     = "efs.csi.aws.com"
+  description = "The storage provisioner for the EFS file system."
+}
+
+variable "aws_efs_csi_driver_iam_policy" {
+  type        = string
+  description = "IAM policy for the AWS EFS CSI driver"
+  default     = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:DescribeAccessPoints",
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeMountTargets",
+        "ec2:DescribeAvailabilityZones"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:CreateAccessPoint"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:TagResource"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "elasticfilesystem:DeleteAccessPoint",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
+    }
+  ]
+}
+EOF
+}
+
 variable "aws_loadbalancer_controller_iam_policy_name" {
   type        = string
   default     = "aws-loadbalancer-controller-iam-policy"
