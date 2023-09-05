@@ -887,6 +887,7 @@ resource "aws_efs_mount_target" "eks_efs_mount_target" {
 }
 
 resource "aws_efs_access_point" "eks_efs_access_point" {
+  count          = var.enable_aws_efs_csi_driver ? 1 : 0
   file_system_id = aws_efs_file_system.eks_efs[0].id
 }
 

@@ -44,7 +44,7 @@ variable "vpc_cidr" {
 ## AWS LoadBalancer Controller
 variable "enable_aws_loadbalancer_controller" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether the AWS LoadBalancer Controller should be deployed."
 }
 
@@ -101,7 +101,7 @@ variable "eks_aws_auth_users" {
 
 variable "enable_aws_cluster_autoscaler" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether the AWS Cluster Autoscaler should be deployed."
 }
 
@@ -155,7 +155,7 @@ EOF
 
 variable "enable_aws_efs_csi_driver" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether the AWS EFS CSI driver should be deployed."
 }
 
@@ -803,7 +803,7 @@ variable "eks_managed_node_group_defaults_capacity_type" {
 
 variable "enable_ebs_csi_driver" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether the EBS CSI driver should be deployed."
 }
 
