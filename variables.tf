@@ -801,25 +801,25 @@ variable "eks_managed_node_group_defaults_capacity_type" {
   description = "The capacity type for the default managed node group."
 }
 
-variable "enable_ebs_csi_driver" {
+variable "enable_aws_ebs_csi_driver" {
   type        = bool
   default     = false
   description = "Determines whether the EBS CSI driver should be deployed."
 }
 
-variable "ebs_csi_driver_version" {
+variable "aws_ebs_csi_driver_version" {
   type        = string
   default     = "2.13.0"
   description = "The version of the EBS CSI driver to deploy."
 }
 
-variable "ebs_csi_driver_iam_policy_name" {
+variable "aws_ebs_csi_driver_iam_policy_name" {
   type        = string
   default     = "ebs-csi-driver-iam-policy"
   description = "The name of the IAM policy for the EBS CSI driver."
 }
 
-variable "ebs_csi_driver_iam_policy" {
+variable "aws_ebs_csi_driver_iam_policy" {
   type        = string
   description = "IAM policy for the EBS CSI driver"
   default     = <<EOF
