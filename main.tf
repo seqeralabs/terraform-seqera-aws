@@ -179,6 +179,33 @@ resource "kubernetes_service_account_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this]
 }
 
+resource "helm_release" "aws_cluster_autoscaler" {
+  count = var.enable_aws_cluster_autoscaler ? 1 : 0
+
+  name       = "aws-cluster-autoscaler"
+  repository = "https://kubernetes.github.io/autoscaler"
+  chart      = "cluster-autoscaler"
+  namespace  = "kube-system"
+  version    = var.aws_cluster_autoscaler_version
+  replace    = true
+  atomic     = true
+  wait       = true
+
+  set {
+    name = "autoDiscovery.clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "awsRegion"
+    value = var.region
+  }
+
+  depends_on = [
+    module.eks
+  ]
+}
+
 resource "null_resource" "ingress_crd" {
   count = var.enable_aws_loadbalancer_controller ? 1 : 0
 
@@ -188,92 +215,6 @@ resource "null_resource" "ingress_crd" {
 
   depends_on = [
     module.eks
-  ]
-}
-
-resource "helm_release" "karpenter" {
-  count = var.install_karpenter ? 1 : 0
-
-  name             = "karpenter"
-  repository       = "oci://public.ecr.aws/karpenter"
-  chart            = "karpenter"
-  namespace        = "karpenter"
-  create_namespace = true
-  version          = var.karpenter_version
-  replace          = true
-  atomic           = true
-  wait             = true
-
-  set {
-    name  = "settings.aws.clusterName"
-    value = module.eks.cluster_name
-  }
-
-  set {
-    name  = "settings.aws.clusterEndpoint"
-    value = module.eks.cluster_endpoint
-  }
-
-  set {
-    name  = "settings.aws.defaultInstanceProfile"
-    value = "KarpenterNodeInstanceProfile-${module.eks.cluster_name}"
-  }
-
-  set {
-    name  = "settings.aws.interruptionQueueName"
-    value = module.eks.cluster_name
-  }
-
-  depends_on = [
-    module.eks
-  ]
-}
-
-resource "kubectl_manifest" "karpenter_provisioner" {
-  count = var.install_karpenter ? 1 : 0
-
-  yaml_body = <<-YAML
-    apiVersion: karpenter.sh/v1alpha5
-    kind: Provisioner
-    metadata:
-      name: default
-    spec:
-      requirements:
-        - key: karpenter.sh/capacity-type
-          operator: In
-          values: ["spot"]
-      limits:
-        resources:
-          cpu: 1000
-      providerRef:
-        name: default
-      ttlSecondsAfterEmpty: 30
-  YAML
-
-  depends_on = [
-    helm_release.karpenter
-  ]
-}
-
-resource "kubectl_manifest" "karpenter_node_template" {
-  count = var.install_karpenter ? 1 : 0
-
-  yaml_body = <<-YAML
-    apiVersion: karpenter.k8s.aws/v1alpha1
-    kind: AWSNodeTemplate
-    metadata:
-      name: default
-    spec:
-      subnetSelector:
-        karpenter.sh/discovery: ${module.eks.cluster_name}
-      securityGroupSelector:
-        karpenter.sh/discovery: ${module.eks.cluster_name}
-      tags:
-        karpenter.sh/discovery: ${module.eks.cluster_name}
-  YAML
-
-  depends_on = [
-    helm_release.karpenter
   ]
 }
 
@@ -445,16 +386,33 @@ locals {
   seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
   seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}"
+  aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
   ebs_csi_driver_iam_policy_name              = "${var.ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
 
-  additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver ? {
+# This code now has 7 conditions, where each one is an individual combination of the three boolean variables 
+# (var.enable_aws_loadbalancer_controller, var.enable_ebs_csi_driver, and var.enable_aws_cluster_autoscaler). 
+# The last condition simply defaults to an empty map if none of the three are enabled.
+
+additional_policies = var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
     ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
-    } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {
+    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
-    } : var.enable_ebs_csi_driver && !var.enable_aws_loadbalancer_controller ? {
+    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
+  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    ebs_csi_driver_iam_policy              = module.ebs_csi_driver_iam_policy[0].arn
+    aws_cluster_autoscaler_iam_policy      = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
+    aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
+  } : !var.enable_aws_loadbalancer_controller && var.enable_ebs_csi_driver && !var.enable_aws_cluster_autoscaler ? {
     ebs_csi_driver_iam_policy = module.ebs_csi_driver_iam_policy[0].arn
-  } : !var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver ? {} : {}
+  } :!var.enable_aws_loadbalancer_controller && !var.enable_ebs_csi_driver && var.enable_aws_cluster_autoscaler ? {
+    aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
+  } : {}  # This last case covers the scenario where none of the three are enabled
 }
 
 module "seqera_iam_policy" {
@@ -478,6 +436,19 @@ module "aws_loadbalancer_controller_iam_policy" {
   description = "This policy provide the permissions needed for AWS loadBalancer controller"
 
   policy = var.aws_loadbalancer_controller_iam_policy
+
+  tags = var.default_tags
+}
+
+module "aws_cluster_autoscaler_iam_policy" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  count  = var.enable_aws_cluster_autoscaler ? 1 : 0
+
+  name        = local.aws_cluster_autoscaler_iam_policy_name
+  path        = "/"
+  description = "This policy provide the permissions needed for AWS cluster autoscaler"
+
+  policy = var.aws_cluster_autoscaler_iam_policy
 
   tags = var.default_tags
 }

@@ -99,16 +99,58 @@ variable "eks_aws_auth_users" {
   description = "List of users ARNs to add to the aws-auth config map"
 }
 
-variable "install_karpenter" {
-  type        = bool
-  default     = false
-  description = "Determines whether to install Karpenter"
+variable "enable_aws_cluster_autoscaler" {
+  type       = bool
+  default    = true
+  description = "Determines whether the AWS Cluster Autoscaler should be deployed."
 }
 
-variable "karpenter_version" {
+variable "aws_cluster_autoscaler_version" {
   type        = string
-  default     = "v0.30.0-rc.0"
-  description = "Karpenter version"
+  default     = "9.29.3"
+  description = "The version of the AWS Cluster Autoscaler to deploy."
+}
+
+variable "aws_cluster_autoscaler_iam_policy_name" {
+  type = string
+  default = "aws-cluster-autoscaler-iam-policy"
+  description = "The name of the IAM policy for the AWS Cluster Autoscaler."
+}
+
+variable "aws_cluster_autoscaler_iam_policy" {
+  type        = string
+  description = "IAM policy for the AWS Cluster Autoscaler"
+  default     = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeAutoScalingInstances",
+        "autoscaling:DescribeLaunchConfigurations",
+        "autoscaling:DescribeScalingActivities",
+        "autoscaling:DescribeTags",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeLaunchTemplateVersions"
+      ],
+      "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:SetDesiredCapacity",
+        "autoscaling:TerminateInstanceInAutoScalingGroup",
+        "ec2:DescribeImages",
+        "ec2:GetInstanceTypesFromInstanceRequirements",
+        "eks:DescribeNodegroup"
+      ],
+      "Resource": ["*"]
+    }
+  ]
+}
+EOF
 }
 
 variable "aws_loadbalancer_controller_iam_policy_name" {
