@@ -140,9 +140,15 @@ module "eks" {
       max_size     = var.eks_managed_node_group_max_size
       desired_size = var.eks_managed_node_group_desired_size
 
-      instance_types = var.eks_managed_node_group_defaults_instance_types
-      capacity_type  = var.eks_managed_node_group_defaults_capacity_type
-      subnet_ids     = module.vpc.private_subnets
+      instance_types               = var.eks_managed_node_group_defaults_instance_types
+      iam_role_additional_policies = local.additional_policies
+      capacity_type                = var.eks_managed_node_group_defaults_capacity_type
+      subnet_ids                   = module.vpc.private_subnets
+      labels = merge(
+        { "service" = "seqera" },
+        var.default_tags,
+        var.eks_managed_node_group_labels
+      )
     }
   }
 

@@ -44,7 +44,7 @@ variable "vpc_cidr" {
 ## AWS LoadBalancer Controller
 variable "enable_aws_loadbalancer_controller" {
   type        = bool
-  default     = false
+  default     = true
   description = "Determines whether the AWS LoadBalancer Controller should be deployed."
 }
 
@@ -79,6 +79,12 @@ variable "eks_managed_node_group_min_size" {
   type        = number
   default     = 2
   description = "The minimum size of the EKS managed node group."
+}
+
+variable "eks_managed_node_group_labels" {
+  type        = map(string)
+  default     = {}
+  description = "Labels to be applied to the Seqera EKS managed node group."
 }
 
 variable "eks_manage_aws_auth_configmap" {
