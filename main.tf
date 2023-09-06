@@ -39,6 +39,15 @@ provider "helm" {
   }
 }
 
+resource "random_id" "this" {
+  keepers = {
+    # Generate a new id each time we switch to a new cluster name.
+    cluster_name = var.cluster_name
+  }
+
+  byte_length = 8
+}
+
 data "aws_caller_identity" "current" {}
 
 module "vpc" {
@@ -1062,12 +1071,12 @@ module "memory_db" {
 }
 
 locals {
-  seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}"
-  seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}"
-  aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}"
-  aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
-  aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
-  aws_ebs_csi_driver_iam_policy_name          = "${var.aws_ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
+  seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+  seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+  aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+  aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+  aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+  aws_ebs_csi_driver_iam_policy_name          = "${var.aws_ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
 
   aws_loadbalancer_controller_policy = var.enable_aws_loadbalancer_controller ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
