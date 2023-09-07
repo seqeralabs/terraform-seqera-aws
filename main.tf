@@ -62,8 +62,8 @@ module "vpc" {
   azs                 = var.azs
   private_subnets     = var.private_subnets
   public_subnets      = var.public_subnets
-  database_subnets    = var.database_subnets
-  elasticache_subnets = var.elasticache_subnets
+  database_subnets    = var.create_db_cluster ? var.database_subnets : []
+  elasticache_subnets = var.create_redis_cluster ? var.elasticache_subnets : []
   intra_subnets       = var.intra_subnets
 
   private_subnet_tags = {
@@ -78,9 +78,9 @@ module "vpc" {
     "kubernetes.io/role/elb"                    = "1"
   }
 
-  create_database_subnet_group       = var.create_database_subnet_group
-  create_elasticache_subnet_group    = var.create_elasticache_subnet_group
-  create_database_subnet_route_table = var.create_database_subnet_route_table
+  create_database_subnet_group       = var.create_db_cluster
+  create_elasticache_subnet_group    = var.create_redis_cluster
+  create_database_subnet_route_table = var.create_db_cluster
   one_nat_gateway_per_az             = var.one_nat_gateway_per_az
 
   enable_nat_gateway = var.enable_nat_gateway
@@ -145,18 +145,18 @@ module "eks" {
 
   eks_managed_node_groups = {
     seqera = {
-      min_size     = var.eks_managed_node_group_min_size
-      max_size     = var.eks_managed_node_group_max_size
-      desired_size = var.eks_managed_node_group_desired_size
+      min_size     = var.seqera_managed_node_group_min_size
+      max_size     = var.seqera_managed_node_group_max_size
+      desired_size = var.seqera_managed_node_group_desired_size
 
-      instance_types               = var.eks_managed_node_group_defaults_instance_types
+      instance_types               = var.seqera_managed_node_group_defaults_instance_types
       iam_role_additional_policies = local.additional_policies
-      capacity_type                = var.eks_managed_node_group_defaults_capacity_type
+      capacity_type                = var.seqera_managed_node_group_defaults_capacity_type
       subnet_ids                   = module.vpc.private_subnets
       labels = merge(
         { "service" = "seqera" },
         var.default_tags,
-        var.eks_managed_node_group_labels
+        var.seqera_managed_node_group_labels
       )
     }
   }
@@ -185,7 +185,7 @@ resource "kubernetes_service_account_v1" "this" {
     name      = var.seqera_service_account_name
     namespace = var.seqera_namespace_name
     annotations = {
-      "eks.amazonaws.com/role-arn" = module.seqera_irsa.iam_role_arn
+      "eks.amazonaws.com/role-arn" = module.seqera_irsa[0].iam_role_arn
     }
   }
 
@@ -239,6 +239,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
 }
 
 resource "kubectl_manifest" "aws_loadbalancer_controller_crd" {
+  count     = var.enable_aws_loadbalancer_controller ? 1 : 0
   yaml_body = <<YAML
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -877,7 +878,7 @@ resource "helm_release" "aws-load-balancer-controller" {
 
 resource "aws_efs_file_system" "eks_efs" {
   count            = var.enable_aws_efs_csi_driver ? 1 : 0
-  creation_token   = var.aws_efs_csi_driver_creation_token
+  creation_token   = var.aws_efs_csi_driver_creation_token_name
   performance_mode = var.aws_efs_csi_driver_performance_mode
 
   tags = {
@@ -912,7 +913,7 @@ resource "kubernetes_storage_class" "efs_storage_class" {
     name = var.aws_efs_csi_driver_storage_class_name
   }
 
-  storage_provisioner = var.aws_efs_csi_driver_storage_class_storage_provisioner
+  storage_provisioner = var.aws_efs_csi_driver_storage_class_storage_provisioner_name
   reclaim_policy      = var.aws_efs_csi_driver_storage_class_reclaim_policy
 
 
@@ -949,17 +950,19 @@ resource "helm_release" "aws-efs-csi-driver" {
 
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws"
+  count  = var.create_db_cluster ? 1 : 0
 
   name        = var.db_security_group_name
   description = "Security group for access from seqera EKS cluster to seqera db"
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  ingress_rules       = [var.db_ingress_rule]
+  ingress_rules       = [var.db_ingress_rule_name]
 }
 
 module "redis_sg" {
   source = "terraform-aws-modules/security-group/aws"
+  count  = var.create_redis_cluster ? 1 : 0
 
   name        = var.redis_security_group_name
   description = "Security group for access from seqera EKS cluster to seqera redis"
@@ -984,6 +987,7 @@ module "efs_sg" {
 
 module "db" {
   source = "terraform-aws-modules/rds/aws"
+  count  = var.create_db_cluster ? 1 : 0
 
   identifier                  = var.database_identifier
   manage_master_user_password = var.db_manage_master_user_password
@@ -1001,7 +1005,7 @@ module "db" {
 
   iam_database_authentication_enabled = var.db_iam_database_authentication_enabled
 
-  vpc_security_group_ids = [module.db_sg.security_group_id]
+  vpc_security_group_ids = [module.db_sg[0].security_group_id]
 
   maintenance_window = var.db_maintenance_window
   backup_window      = var.db_backup_window
@@ -1032,6 +1036,7 @@ module "db" {
 
 module "memory_db" {
   source = "terraform-aws-modules/memory-db/aws"
+  count  = var.create_redis_cluster ? 1 : 0
 
   # Cluster
   name        = var.redis_cluster_name
@@ -1044,7 +1049,7 @@ module "memory_db" {
   num_replicas_per_shard     = var.redis_num_replicas_per_shard
 
   tls_enabled              = var.redis_tls_enabled
-  security_group_ids       = [module.redis_sg.security_group_id]
+  security_group_ids       = [module.redis_sg[0].security_group_id]
   maintenance_window       = var.redis_maintenance_window
   snapshot_retention_limit = var.redis_snapshot_retention_limit
   snapshot_window          = var.redis_snapshot_window
@@ -1071,12 +1076,21 @@ module "memory_db" {
 }
 
 locals {
+  # The following local variables are used to create unique IAM names (roles and policies).
+  # The names are constructed by combining the input variable, the cluster name, region, 
+  # and a random hexadecimal value (`random_id.this.hex`).
+  
   seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   aws_ebs_csi_driver_iam_policy_name          = "${var.aws_ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
+
+  # The next set of local variables are conditional policy mappings.
+  # If the respective feature is enabled (e.g., `var.enable_aws_loadbalancer_controller` is true), 
+  # the policy ARN from the associated module is stored in a map. 
+  # Otherwise, an empty map is returned.
 
   aws_loadbalancer_controller_policy = var.enable_aws_loadbalancer_controller ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
@@ -1094,6 +1108,9 @@ locals {
     aws_efs_csi_driver_iam_policy = module.aws_efs_csi_driver_iam_policy[0].arn
   } : {}
 
+  # `additional_policies` combines all the above policy mappings into a single map using the `merge` function.
+  # If multiple policies are enabled, their mappings are merged together.
+
   additional_policies = merge(
     local.aws_loadbalancer_controller_policy,
     local.aws_ebs_csi_driver_policy,
@@ -1101,79 +1118,89 @@ locals {
     local.aws_efs_csi_driver_policy
   )
 }
-
+# This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  count  = var.create_seqera_service_account ? 1 : 0  # Conditional creation of the IAM policy based on the variable.
 
   name        = local.seqera_irsa_iam_policy_name
-  path        = "/"
-  description = "This policy provide the permissions needed for seqera service account to be able to interact with the required AWS services."
+  path        = "/"  # The path in which the policy is created.
+  description = "This policy provides the permissions needed for seqera service account to interact with the required AWS services."
 
-  policy = var.seqera_platform_service_account_iam_policy
+  policy = var.seqera_platform_service_account_iam_policy  # Policy content or document.
 
-  tags = var.default_tags
+  tags = var.default_tags  # Assigning default tags.
 }
 
+# This module creates an IAM policy for the AWS Load Balancer Controller.
 module "aws_loadbalancer_controller_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_loadbalancer_controller ? 1 : 0
+  count  = var.enable_aws_loadbalancer_controller ? 1 : 0  # Conditional creation based on the variable.
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
   path        = "/"
-  description = "This policy provide the permissions needed for AWS loadBalancer controller"
+  description = "This policy provides the permissions needed for AWS loadBalancer controller"
 
-  policy = var.aws_loadbalancer_controller_iam_policy
+  policy = var.aws_loadbalancer_controller_iam_policy  # Policy content or document.
 
-  tags = var.default_tags
+  tags = var.default_tags  # Assigning default tags.
 }
 
+# This module creates an IAM policy for the AWS EFS CSI Driver.
 module "aws_efs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_efs_csi_driver ? 1 : 0
+  count  = var.enable_aws_efs_csi_driver ? 1 : 0  # Conditional creation based on the variable.
 
   name        = local.aws_efs_csi_driver_iam_policy_name
   path        = "/"
-  description = "This policy provide the permissions needed for AWS EFS CSI driver"
+  description = "This policy provides the permissions needed for AWS EFS CSI driver"
 
-  policy = var.aws_efs_csi_driver_iam_policy
+  policy = var.aws_efs_csi_driver_iam_policy  # Policy content or document.
 
-  tags = var.default_tags
+  tags = var.default_tags  # Assigning default tags.
 }
 
+# This module creates an IAM policy for the AWS Cluster Autoscaler.
 module "aws_cluster_autoscaler_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_cluster_autoscaler ? 1 : 0
+  count  = var.enable_aws_cluster_autoscaler ? 1 : 0  # Conditional creation based on the variable.
 
   name        = local.aws_cluster_autoscaler_iam_policy_name
   path        = "/"
-  description = "This policy provide the permissions needed for AWS cluster autoscaler"
+  description = "This policy provides the permissions needed for AWS cluster autoscaler"
 
-  policy = var.aws_cluster_autoscaler_iam_policy
+  policy = var.aws_cluster_autoscaler_iam_policy  # Policy content or document.
 
-  tags = var.default_tags
+  tags = var.default_tags  # Assigning default tags.
 }
 
+# This module creates an IAM policy for the EBS CSI Driver.
 module "aws_ebs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_ebs_csi_driver ? 1 : 0
+  count  = var.enable_aws_ebs_csi_driver ? 1 : 0  # Conditional creation based on the variable.
 
   name        = local.aws_ebs_csi_driver_iam_policy_name
   path        = "/"
-  description = "This policy provide the permissions needed for EBS CSI driver"
+  description = "This policy provides the permissions needed for EBS CSI driver"
 
-  policy = var.aws_ebs_csi_driver_iam_policy
+  policy = var.aws_ebs_csi_driver_iam_policy  # Policy content or document.
 
-  tags = var.default_tags
+  tags = var.default_tags  # Assigning default tags.
 }
 
+# This module creates an IAM role for service accounts for Seqera.
+# Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  count  = var.create_seqera_service_account ? 1 : 0  # Conditional creation based on the variable.
 
   role_name = local.seqera_irsa_role_name
 
-  attach_vpc_cni_policy = true
-  vpc_cni_enable_ipv4   = true
+  attach_vpc_cni_policy = true  # Attach the VPC CNI policy to this IAM role.
+  vpc_cni_enable_ipv4   = true  # Enable IPv4 for VPC CNI.
 
+  # Configuring the OpenID Connect (OIDC) provider for EKS. This is important for establishing the relationship 
+  # between a Kubernetes service account and an AWS IAM role.
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
@@ -1181,13 +1208,16 @@ module "seqera_irsa" {
     }
   }
 
+  # IAM Policies to be attached to this role. 
+  # It attaches the Amazon EKS CNI policy and the IAM policy created for Seqera.
   role_policy_arns = {
     AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-    additional           = module.seqera_iam_policy.arn
+    additional           = module.seqera_iam_policy[0].arn
   }
 
   tags = {
-    Name = local.seqera_irsa_role_name
+    Name = local.seqera_irsa_role_name  # Assigning the role name as a tag.
   }
 }
+
 

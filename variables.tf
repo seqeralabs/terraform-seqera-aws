@@ -8,7 +8,7 @@ variable "environment" {
 ## Region
 variable "region" {
   type        = string
-  default     = "eu-west-1"
+  default     = ""
   description = "The AWS region in which the resources will be provisioned."
 }
 
@@ -75,54 +75,62 @@ variable "eks_cluster_addons" {
 }
 
 ## EKS Managed Node Group - Minimum Size
-variable "eks_managed_node_group_min_size" {
+variable "seqera_managed_node_group_min_size" {
   type        = number
   default     = 2
   description = "The minimum size of the EKS managed node group."
 }
 
-variable "eks_managed_node_group_labels" {
+## Seqera Managed Node Group - Extra labels
+variable "seqera_managed_node_group_labels" {
   type        = map(string)
   default     = {}
   description = "Labels to be applied to the Seqera EKS managed node group."
 }
 
+## EKS aws-auth ConfigMap
 variable "eks_manage_aws_auth_configmap" {
   type        = bool
   default     = true
   description = "Determines whether to manage the aws-auth ConfigMap."
 }
 
+## EKS aws-auth ConfigMap - Roles
 variable "eks_aws_auth_roles" {
   type        = list(string)
   default     = []
   description = "List of roles ARNs to add to the aws-auth config map"
 }
 
+## EKS aws-auth ConfigMap - Users
 variable "eks_aws_auth_users" {
   type        = list(string)
   default     = []
   description = "List of users ARNs to add to the aws-auth config map"
 }
 
+## Enable AWS Cluster Autoscaler
 variable "enable_aws_cluster_autoscaler" {
   type        = bool
   default     = false
   description = "Determines whether the AWS Cluster Autoscaler should be deployed."
 }
 
+## AWS Cluster Autoscaler version
 variable "aws_cluster_autoscaler_version" {
   type        = string
   default     = "9.29.3"
   description = "The version of the AWS Cluster Autoscaler to deploy."
 }
 
+## AWS Cluster Autoscaler IAM Policy Name
 variable "aws_cluster_autoscaler_iam_policy_name" {
   type        = string
   default     = "aws-cluster-autoscaler-iam-policy"
   description = "The name of the IAM policy for the AWS Cluster Autoscaler."
 }
 
+## AWS Cluster Autoscaler IAM Policy
 variable "aws_cluster_autoscaler_iam_policy" {
   type        = string
   description = "IAM policy for the AWS Cluster Autoscaler"
@@ -159,66 +167,77 @@ variable "aws_cluster_autoscaler_iam_policy" {
 EOF
 }
 
+## Enable AWS EFS CSI Driver
 variable "enable_aws_efs_csi_driver" {
   type        = bool
   default     = false
   description = "Determines whether the AWS EFS CSI driver should be deployed."
 }
 
+## AWS EFS CSI Driver Security Group Name
 variable "aws_efs_csi_driver_security_group_name" {
   type        = string
   default     = "aws-efs-csi-driver-sg"
   description = "The name of the security group for the AWS EFS CSI driver."
 }
 
+## AWS EFS CSI Driver Security Group Ingress Rule Name
 variable "aws_efs_csi_driver_security_group_ingress_rule_name" {
   type        = string
   default     = "nfs-tcp"
   description = "The name of the security group ingress rule for the AWS EFS CSI driver."
 }
 
+## AWS EFS CSI Driver driver version
 variable "aws_efs_csi_driver_version" {
   type        = string
   default     = "2.4.9"
   description = "The version of the AWS EFS CSI driver to deploy."
 }
 
+## AWS EFS CSI Driver IAM Policy Name
 variable "aws_efs_csi_driver_iam_policy_name" {
   type        = string
   default     = "aws-efs-csi-driver-iam-policy"
   description = "The name of the IAM policy for the AWS EFS CSI driver."
 }
 
-variable "aws_efs_csi_driver_creation_token" {
+## AWS EFS CSI Driver Creation Token Name 
+variable "aws_efs_csi_driver_creation_token_name" {
   type        = string
   default     = "seqera-efs-csi-driver"
   description = "The creation token for the EFS file system."
 }
 
+## AWS EFS CSI Driver Performance Mode
 variable "aws_efs_csi_driver_performance_mode" {
   type        = string
   default     = "generalPurpose"
   description = "The performance mode of the EFS file system."
 }
 
+## AWS EFS CSI Driver backup policy status
 variable "aws_efs_csi_driver_backup_policy_status" {
   type        = string
   default     = "ENABLED"
   description = "The backup policy status of the EFS file system."
 }
 
+## AWS EFS CSI Driver storage class name
 variable "aws_efs_csi_driver_storage_class_name" {
   type        = string
   default     = "efs-sc"
   description = "The name of the storage class for the EFS file system."
 }
 
+## AWS EFS CSI Driver storage class reclaim policy
 variable "aws_efs_csi_driver_storage_class_reclaim_policy" {
   type        = string
   default     = "Retain"
   description = "The reclaim policy for the EFS file system."
 }
 
+## AWS EFS CSI Driver storage class parameters
 variable "aws_efs_csi_driver_storage_class_parameters" {
   type = map(string)
   default = {
@@ -231,12 +250,14 @@ variable "aws_efs_csi_driver_storage_class_parameters" {
   description = "The parameters for the storage class for the EFS file system."
 }
 
-variable "aws_efs_csi_driver_storage_class_storage_provisioner" {
+## AWS EFS CSI Driver storage class storage provisioner name
+variable "aws_efs_csi_driver_storage_class_storage_provisioner_name" {
   type        = string
   default     = "efs.csi.aws.com"
   description = "The storage provisioner for the EFS file system."
 }
 
+## AWS EFS CSI Driver IAM Policy
 variable "aws_efs_csi_driver_iam_policy" {
   type        = string
   description = "IAM policy for the AWS EFS CSI driver"
@@ -293,18 +314,21 @@ variable "aws_efs_csi_driver_iam_policy" {
 EOF
 }
 
+## AWS LoadBalancer Controller IAM Policy Name
 variable "aws_loadbalancer_controller_iam_policy_name" {
   type        = string
   default     = "aws-loadbalancer-controller-iam-policy"
   description = "The name of the IAM policy for the AWS LoadBalancer Controller"
 }
 
+## AWS LoadBalancer Controller version
 variable "aws_loadbalancer_controller_version" {
   type        = string
   default     = "1.6.0"
   description = "The version of the AWS LoadBalancer Controller to deploy"
 }
 
+## AWS LoadBalancer Controller IAM Policy
 variable "aws_loadbalancer_controller_iam_policy" {
   type        = string
   default     = <<EOF
@@ -663,12 +687,14 @@ variable "seqera_namespace_name" {
   description = "The name of the namespace used to deploy Seqera platform manifests."
 }
 
+## Enable Seqera Namespace
 variable "create_seqera_namespace" {
   type        = bool
   default     = true
   description = "Determines whether to create the Seqera namespace."
 }
 
+## Enable Seqera Service Account
 variable "create_seqera_service_account" {
   type        = bool
   default     = true
@@ -690,14 +716,14 @@ variable "eks_enable_irsa" {
 }
 
 ## EKS Managed Node Group - Maximum Size
-variable "eks_managed_node_group_max_size" {
+variable "seqera_managed_node_group_max_size" {
   type        = number
   default     = 4
   description = "The maximum size of the EKS managed node group."
 }
 
 ## EKS Managed Node Group - Desired Size
-variable "eks_managed_node_group_desired_size" {
+variable "seqera_managed_node_group_desired_size" {
   type        = number
   default     = 2
   description = "The desired size of the EKS managed node group."
@@ -709,68 +735,73 @@ variable "intra_subnets" {
   description = "A list of subnet IDs for intra subnets within the VPC."
 }
 
+## Public Subnets
 variable "public_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for public subnets within the VPC."
 }
 
+## Private Subnets
 variable "private_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for private subnets within the VPC."
 }
 
+## Database Subnets
 variable "database_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for database subnets within the VPC."
 }
 
+## Elasticache Subnets
 variable "elasticache_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for Elasticache subnets within the VPC."
 }
 
+## Enable DNS Hostnames
 variable "enable_dns_hostnames" {
   type        = bool
   default     = true
   description = "Determines whether instances in the VPC receive DNS hostnames."
 }
 
+## Enable DNS Support
 variable "enable_dns_support" {
   type        = bool
   default     = true
   description = "Determines whether DNS resolution is supported for the VPC."
 }
 
+## Create database subnet group
 variable "create_database_subnet_group" {
   type        = bool
   default     = true
   description = "Determines whether a database subnet group should be created."
 }
 
-variable "create_elasticache_subnet_group" {
-  type        = bool
-  default     = false
-  description = "Determines whether an Elasticache subnet group should be created."
-}
-
+## Create database subnet route table
 variable "create_database_subnet_route_table" {
   type        = bool
   default     = true
   description = "Determines whether a subnet route table should be created for the database subnets."
 }
 
+## Enable One NAT Gateway Per AZ
 variable "one_nat_gateway_per_az" {
   type        = bool
   default     = true
   description = "Determines whether each Availability Zone should have a dedicated NAT gateway."
 }
 
+## Enable NAT Gateway
 variable "enable_nat_gateway" {
   type        = bool
   default     = true
   description = "Determines whether NAT gateways should be provisioned."
 }
 
+## Enable VPN Gateway
 variable "enable_vpn_gateway" {
   type        = bool
   default     = false
@@ -783,48 +814,69 @@ variable "azs" {
   description = "A list of Availability Zones in the selected region."
 }
 
-## EKS
+## EKS Cluster Name
 variable "cluster_name" {
   type        = string
   description = "The name of the EKS cluster."
 }
 
+## EKS Cluster Version
 variable "cluster_version" {
   type        = string
   default     = "1.27"
   description = "The version of Kubernetes to use for the EKS cluster."
 }
 
+## EKS Default Managed Node Group Instance Types
 variable "eks_managed_node_group_defaults_instance_types" {
   type        = list(string)
   default     = ["m5a.2xlarge"]
   description = "A list of EC2 instance types for the default managed node group."
 }
 
+## EKS Seqera managed Node Group Instance Types
+variable "seqera_managed_node_group_defaults_instance_types" {
+  type        = list(string)
+  default     = ["m5a.2xlarge"]
+  description = "A list of EC2 instance types for the Seqera managed node group."
+}
+
+## EKS Default Managed Node Group capacity type
 variable "eks_managed_node_group_defaults_capacity_type" {
   type        = string
   default     = "ON_DEMAND"
   description = "The capacity type for the default managed node group."
 }
 
+## EKS Seqera managed Node Group capacity type
+variable "seqera_managed_node_group_defaults_capacity_type" {
+  type        = string
+  default     = "ON_DEMAND"
+  description = "The capacity type for the Seqera managed node group."
+}
+
+## Enable AWS EBS CSI Driver
 variable "enable_aws_ebs_csi_driver" {
   type        = bool
   default     = false
   description = "Determines whether the EBS CSI driver should be deployed."
 }
 
+## AWS EBS CSI Driver version
 variable "aws_ebs_csi_driver_version" {
   type        = string
   default     = "2.13.0"
   description = "The version of the EBS CSI driver to deploy."
 }
 
+## AWS EBS CSI Driver IAM Policy Name
 variable "aws_ebs_csi_driver_iam_policy_name" {
   type        = string
   default     = "ebs-csi-driver-iam-policy"
   description = "The name of the IAM policy for the EBS CSI driver."
 }
 
+## AWS EBS CSI Driver IAM Policy
 variable "aws_ebs_csi_driver_iam_policy" {
   type        = string
   description = "IAM policy for the EBS CSI driver"
@@ -972,110 +1024,126 @@ variable "db_security_group_name" {
   description = "The name of the security group for the database."
 }
 
+## Redis Security Group Name
 variable "redis_security_group_name" {
   type        = string
   default     = "seqera_redis_security_group"
   description = "The name of the security group for Redis."
 }
 
+## Seqera IRSA Role Name
 variable "seqera_irsa_role_name" {
   type        = string
   default     = "seqera-irsa-role"
   description = "The name of the IAM role for IRSA."
 }
 
+## Seqera IRSA IAM Policy Name
 variable "seqera_irsa_iam_policy_name" {
   type        = string
   description = "The name of the IAM policy for IRSA."
   default     = "seqera-irsa-iam-policy"
 }
 
-## Database
-
+## Database Identifier
 variable "database_identifier" {
   type        = string
   default     = "seqera-db"
   description = "The identifier for the database."
 }
 
-variable "redis_cluster_name" {
-  type        = string
-  default     = "seqera-redis"
-  description = "The name of the Redis cluster."
+## Create Database Cluster
+variable "create_db_cluster" {
+  type        = bool
+  default     = true
+  description = "Determines whether the database cluster should be created."
 }
 
+## Database Engine Version
 variable "db_engine_version" {
   type        = string
   default     = "5.7"
   description = "The version of the database engine."
 }
 
+## Database Instance Class
 variable "db_instance_class" {
   type        = string
   default     = "db.r5.xlarge"
   description = "The instance class for the database."
 }
 
+## Database Allocation Storage
 variable "db_allocated_storage" {
   type        = number
   default     = 10
   description = "The allocated storage size for the database."
 }
 
+## Disable Database Final Snapshot
 variable "db_skip_final_snapshot" {
   type        = bool
   default     = true
   description = "Determines whether a final snapshot should be created when the database is deleted."
 }
 
+## Database Name
 variable "db_name" {
   type        = string
   default     = "seqera"
   description = "The name of the database."
 }
 
+## Database Username
 variable "db_username" {
   type        = string
   default     = "admin"
   description = "The username for the database."
 }
 
+## Database Password
 variable "db_password" {
   type        = string
   default     = "my_db_password"
   description = "Password for the master DB user. Note that this may show up in logs, and it will be stored in the state file. The password provided will not be used if `manage_master_user_password` is set to true."
 }
 
+## Database Port
 variable "db_port" {
   type        = string
   default     = "3306"
   description = "The port for the database."
 }
 
-variable "db_ingress_rule" {
+## Database Ingress Rule Name
+variable "db_ingress_rule_name" {
   type        = string
   default     = "mysql-tcp"
   description = "The ingress rule for the database."
 }
 
+## Enable Database Master User Password Management
 variable "db_manage_master_user_password" {
   type        = bool
   default     = false
   description = "Determines whether the master user password should be managed."
 }
 
+## Enable Database IAM Authentication
 variable "db_iam_database_authentication_enabled" {
   type        = bool
   default     = false
   description = "Determines whether IAM database authentication is enabled for the database."
 }
 
+## Database Maintenance Window
 variable "db_maintenance_window" {
   type        = string
   default     = "Mon:00:00-Mon:03:00"
   description = "The maintenance window for the database."
 }
 
+## Database Backup Window
 variable "db_backup_window" {
   type        = string
   default     = "03:00-06:00"
@@ -1129,37 +1197,42 @@ variable "db_options" {
   ]
 }
 
-
+## Database Monitoring Interval
 variable "db_monitoring_interval" {
   type        = string
   default     = "0"
   description = "The monitoring interval for the database."
 }
 
+## Database Monitoring Role Name
 variable "db_monitoring_role_name" {
   type        = string
   default     = "SeqeraRDSMonitoringRole"
   description = "The name of the IAM role used for database monitoring."
 }
 
+## Create Database Monitoring Role
 variable "db_create_monitoring_role" {
   type        = bool
   default     = false
   description = "Determines whether the monitoring role should be created."
 }
 
+## Database family
 variable "db_family" {
   type        = string
   default     = "mysql5.7"
   description = "The family of the database engine."
 }
 
+## Database major engine version
 variable "db_major_engine_version" {
   type        = string
   default     = "5.7"
   description = "The major version of the database engine."
 }
 
+## Database deletion protection
 variable "db_deletion_protection" {
   type        = bool
   default     = false
@@ -1169,10 +1242,24 @@ variable "db_deletion_protection" {
 ## Redis MemoryDB Cluster
 
 ## Redis Engine Version
+variable "create_redis_cluster" {
+  type        = bool
+  description = "Determines whether to create a Redis cluster."
+  default     = true
+}
+
+## Redis Engine Version
 variable "redis_engine_version" {
   type        = string
   description = "The version of the Redis engine."
   default     = "6.2"
+}
+
+## Redis Cluster Name
+variable "redis_cluster_name" {
+  type        = string
+  default     = "seqera-redis"
+  description = "The name of the Redis cluster."
 }
 
 ## Redis Auto Minor Version Upgrade
@@ -1210,12 +1297,14 @@ variable "redis_tls_enabled" {
   default     = false
 }
 
+## Create Redis ACL
 variable "redis_create_acl" {
   type        = bool
   default     = false
   description = "Determines whether an ACL should be created for Redis."
 }
 
+## Redis ACL Name
 variable "redis_acl_name" {
   type    = string
   default = "open-access"
@@ -1280,18 +1369,21 @@ variable "redis_parameter_group_name" {
   default     = "redis-param-group"
 }
 
+## Redis Parameter Group Description
 variable "redis_parameter_group_description" {
   type        = string
   description = "The description of the Redis parameter group."
   default     = "Redis MemoryDB parameter group"
 }
 
+## Redis Parameter Group Family
 variable "redis_parameter_group_family" {
   type        = string
   description = "The family of the Redis parameter group."
   default     = "memorydb_redis6"
 }
 
+## Redis Parameter Group Parameters
 variable "redis_parameter_group_parameters" {
   type = list(object({
     name  = string
@@ -1306,6 +1398,7 @@ variable "redis_parameter_group_parameters" {
   ]
 }
 
+## Redis Parameter Group Tags
 variable "redis_parameter_group_tags" {
   type        = map(string)
   description = "Tags to be applied to the Redis parameter group."
@@ -1321,12 +1414,14 @@ variable "redis_create_subnet_group" {
   default     = true
 }
 
+## Redis Subnet Group Name
 variable "redis_subnet_group_name" {
   type        = string
   description = "The name of the Redis subnet group."
   default     = "seqera-redis-subnetgroup"
 }
 
+## Redis Subnet Group Description
 variable "redis_subnet_group_description" {
   type        = string
   description = "The description of the Redis subnet group."
