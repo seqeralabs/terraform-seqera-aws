@@ -1267,5 +1267,3 @@ module "seqera_irsa" {
     Name = local.seqera_irsa_role_name # Assigning the role name as a tag.
   }
 }
-
-
