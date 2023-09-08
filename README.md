@@ -114,7 +114,9 @@ This Terraform code is licensed under the Apache License
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13.1 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | 5.0.0 |
-| <a name="requirement_mysql"></a> [mysql](#requirement\_mysql) | 3.0.41 |
+| <a name="requirement_helm"></a> [helm](#requirement\_helm) | 2.11.0 |
+| <a name="requirement_kubectl"></a> [kubectl](#requirement\_kubectl) | 1.14.0 |
+| <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | 2.23.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | 3.5.1 |
 
 ## Providers
@@ -122,9 +124,9 @@ This Terraform code is licensed under the Apache License
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | 5.0.0 |
-| <a name="provider_helm"></a> [helm](#provider\_helm) | n/a |
-| <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | n/a |
-| <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | n/a |
+| <a name="provider_helm"></a> [helm](#provider\_helm) | 2.11.0 |
+| <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | 1.14.0 |
+| <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 2.23.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.5.1 |
 
 ## Modules
@@ -153,14 +155,14 @@ This Terraform code is licensed under the Apache License
 | [aws_efs_backup_policy.eks_efs](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/resources/efs_backup_policy) | resource |
 | [aws_efs_file_system.eks_efs](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/resources/efs_file_system) | resource |
 | [aws_efs_mount_target.eks_efs_mount_target](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/resources/efs_mount_target) | resource |
-| [helm_release.aws-ebs-csi-driver](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
-| [helm_release.aws-efs-csi-driver](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
-| [helm_release.aws-load-balancer-controller](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
-| [helm_release.aws_cluster_autoscaler](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
-| [kubectl_manifest.aws_loadbalancer_controller_crd](https://registry.terraform.io/providers/gavinbunney/kubectl/latest/docs/resources/manifest) | resource |
-| [kubernetes_namespace_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace_v1) | resource |
-| [kubernetes_service_account_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/service_account_v1) | resource |
-| [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/storage_class) | resource |
+| [helm_release.aws-ebs-csi-driver](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
+| [helm_release.aws-efs-csi-driver](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
+| [helm_release.aws-load-balancer-controller](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
+| [helm_release.aws_cluster_autoscaler](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
+| [kubectl_manifest.aws_loadbalancer_controller_crd](https://registry.terraform.io/providers/gavinbunney/kubectl/1.14.0/docs/resources/manifest) | resource |
+| [kubernetes_namespace_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/namespace_v1) | resource |
+| [kubernetes_service_account_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/service_account_v1) | resource |
+| [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
 | [random_id.this](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/id) | resource |
 | [random_password.db_seqera_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
