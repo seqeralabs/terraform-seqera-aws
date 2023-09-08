@@ -50,78 +50,91 @@ resource "random_id" "this" {
 
 data "aws_caller_identity" "current" {}
 
+# This module provisions a VPC (Virtual Private Cloud) in AWS using the terraform-aws-modules' VPC module.
+# VPCs provide isolation for AWS resources and allow one to define a network with their own IP address range,
+# subnets, internet gateways, route tables, and network gateways.
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source = "terraform-aws-modules/vpc/aws" # The source from where the module is fetched.
 
+  # Define the VPC name and CIDR block.
   name = var.vpc_name
   cidr = var.vpc_cidr
 
+  # Enabling or disabling the DNS hostnames and DNS support in the VPC.
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
 
-  azs                 = var.azs
-  private_subnets     = var.private_subnets
-  public_subnets      = var.public_subnets
+  # Define the Availability Zones for the VPC and the CIDR blocks for various subnets.
+  azs             = var.azs
+  private_subnets = var.private_subnets
+  public_subnets  = var.public_subnets
+
+  # Conditionally create database and elasticache subnets based on variables.
   database_subnets    = var.create_db_cluster ? var.database_subnets : []
   elasticache_subnets = var.create_redis_cluster ? var.elasticache_subnets : []
-  intra_subnets       = var.intra_subnets
 
+  intra_subnets = var.intra_subnets
+
+  # Tags for the private and public subnets, commonly used for identifying subnets for Kubernetes clusters.
   private_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
     "kubernetes.io/cluster/CLUSTER_NAME"        = var.cluster_name
     "kubernetes.io/role/internal-elb"           = "1"
   }
-
   public_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
     "kubernetes.io/cluster/CLUSTER_NAME"        = var.cluster_name
     "kubernetes.io/role/elb"                    = "1"
   }
 
+  # Settings to control the creation of specific subnet groups.
   create_database_subnet_group       = var.create_db_cluster
   create_elasticache_subnet_group    = var.create_redis_cluster
   create_database_subnet_route_table = var.create_db_cluster
-  one_nat_gateway_per_az             = var.one_nat_gateway_per_az
 
+  # Whether to create one NAT (Network Address Translation) gateway per availability zone.
+  one_nat_gateway_per_az = var.one_nat_gateway_per_az
+
+  # Controls enabling NAT and VPN gateways.
   enable_nat_gateway = var.enable_nat_gateway
   enable_vpn_gateway = var.enable_vpn_gateway
 
+  # Default tags for VPC resources.
   tags = var.default_tags
 }
 
+# Using the 'locals' block to define local values or transformations. 
+# Here, it defines two lists to set roles and users for the AWS EKS (Elastic Kubernetes Service) cluster.
 locals {
   eks_aws_auth_roles = distinct(flatten(
     [
       for role in var.eks_aws_auth_roles : [
         {
           rolearn  = role
-          username = element(split("/", role), 1)
-          groups = [
-            "system:masters"
-          ]
+          username = element(split("/", role), 1) # Extracting the username from the role's ARN.
+          groups   = ["system:masters"]
         }
       ]
     ]
-    )
-  )
+  ))
 
   eks_aws_auth_users = distinct(flatten(
     [
       for user in var.eks_aws_auth_users : [
         {
           userarn  = user
-          username = element(split("/", user), 1)
+          username = element(split("/", user), 1) # Extracting the username from the user's ARN.
           groups   = ["system:masters"]
         }
       ]
     ]
-    )
-  )
+  ))
 }
 
+# This module provisions an AWS EKS cluster using the terraform-aws-modules' EKS module.
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 19.0" # Specifies the version of the EKS module to use.
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -132,17 +145,19 @@ module "eks" {
 
   enable_irsa = var.eks_enable_irsa
 
+  # Specifying the VPC and subnets where the EKS cluster will reside.
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
 
-  # EKS Managed Node Group(s)
+  # EKS Managed Node Group settings.
   eks_managed_node_group_defaults = {
     instance_types               = var.eks_managed_node_group_defaults_instance_types
     iam_role_additional_policies = local.additional_policies
     subnet_ids                   = module.vpc.private_subnets
   }
 
+  # Definition for specific node groups in the EKS cluster.
   eks_managed_node_groups = {
     seqera = {
       min_size     = var.seqera_managed_node_group_min_size
@@ -153,6 +168,7 @@ module "eks" {
       iam_role_additional_policies = local.additional_policies
       capacity_type                = var.seqera_managed_node_group_defaults_capacity_type
       subnet_ids                   = module.vpc.private_subnets
+
       labels = merge(
         { "service" = "seqera" },
         var.default_tags,
@@ -163,6 +179,7 @@ module "eks" {
 
   iam_role_additional_policies = local.additional_policies
 
+  # AWS auth configuration for EKS to specify roles and users.
   manage_aws_auth_configmap = var.eks_manage_aws_auth_configmap
   aws_auth_roles            = local.eks_aws_auth_roles
   aws_auth_users            = local.eks_aws_auth_users
@@ -170,6 +187,7 @@ module "eks" {
   tags = var.default_tags
 }
 
+# A resource to create a Kubernetes namespace.
 resource "kubernetes_namespace_v1" "this" {
   count = var.create_seqera_namespace ? 1 : 0 || var.create_seqera_service_account ? 1 : 0
 
@@ -178,6 +196,7 @@ resource "kubernetes_namespace_v1" "this" {
   }
 }
 
+# A resource to create a Kubernetes service account within the specified namespace.
 resource "kubernetes_service_account_v1" "this" {
   count = var.create_seqera_service_account ? 1 : 0
 
@@ -191,9 +210,10 @@ resource "kubernetes_service_account_v1" "this" {
 
   automount_service_account_token = true
 
-  depends_on = [kubernetes_namespace_v1.this]
+  depends_on = [kubernetes_namespace_v1.this] # Ensures the namespace is created before the service account.
 }
 
+# A Helm release resource for deploying the AWS cluster autoscaler using the Helm package manager.
 resource "helm_release" "aws_cluster_autoscaler" {
   count = var.enable_aws_cluster_autoscaler ? 1 : 0
 
@@ -221,6 +241,7 @@ resource "helm_release" "aws_cluster_autoscaler" {
   ]
 }
 
+# A Helm release resource for deploying the AWS EBS CSI driver using the Helm package manager.
 resource "helm_release" "aws-ebs-csi-driver" {
   count = var.enable_aws_ebs_csi_driver ? 1 : 0
 
@@ -238,6 +259,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
   ]
 }
 
+# Customer Resource Definition (CRD) for the AWS Load Balancer Controller.
 resource "kubectl_manifest" "aws_loadbalancer_controller_crd" {
   count     = var.enable_aws_loadbalancer_controller ? 1 : 0
   yaml_body = <<YAML
@@ -838,6 +860,7 @@ YAML
   ]
 }
 
+# A Helm release resource for deploying the AWS Load Balancer Controller using the Helm package manager.
 resource "helm_release" "aws-load-balancer-controller" {
   count = var.enable_aws_loadbalancer_controller ? 1 : 0
 
@@ -875,49 +898,53 @@ resource "helm_release" "aws-load-balancer-controller" {
     kubectl_manifest.aws_loadbalancer_controller_crd
   ]
 }
-
+# This resource creates an AWS Elastic File System (EFS) specifically for the EKS cluster.
 resource "aws_efs_file_system" "eks_efs" {
-  count            = var.enable_aws_efs_csi_driver ? 1 : 0
-  creation_token   = var.aws_efs_csi_driver_creation_token_name
-  performance_mode = var.aws_efs_csi_driver_performance_mode
+  count            = var.enable_aws_efs_csi_driver ? 1 : 0      # Only creates the EFS if the `enable_aws_efs_csi_driver` variable is true.
+  creation_token   = var.aws_efs_csi_driver_creation_token_name # Token used to ensure idempotent creation (preventing duplicate filesystems).
+  performance_mode = var.aws_efs_csi_driver_performance_mode    # Defines the performance mode for the EFS (generalPurpose or maxIO).
 
   tags = {
-    Name = var.cluster_name
+    Name = var.cluster_name # Tags the EFS with the cluster name.
   }
 }
 
+# This resource creates a backup policy for the EFS.
 resource "aws_efs_backup_policy" "eks_efs" {
-  count          = var.enable_aws_efs_csi_driver ? 1 : 0
-  file_system_id = aws_efs_file_system.eks_efs[0].id
+  count          = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the backup policy if the `enable_aws_efs_csi_driver` variable is true.
+  file_system_id = aws_efs_file_system.eks_efs[0].id     # References the ID of the EFS created above.
 
   backup_policy {
-    status = var.aws_efs_csi_driver_backup_policy_status
+    status = var.aws_efs_csi_driver_backup_policy_status # Status of the backup policy (usually either "ENABLED" or "DISABLED").
   }
 }
 
+# This resource creates mount targets for the EFS within the private subnets of the VPC.
 resource "aws_efs_mount_target" "eks_efs_mount_target" {
-  count           = var.enable_aws_efs_csi_driver ? length(module.vpc.private_subnets) : 0
-  file_system_id  = aws_efs_file_system.eks_efs[0].id
-  subnet_id       = element(module.vpc.private_subnets, count.index)
-  security_groups = [module.efs_sg[0].security_group_id]
+  count           = var.enable_aws_efs_csi_driver ? length(module.vpc.private_subnets) : 0 # Creates a mount target for each private subnet if `enable_aws_efs_csi_driver` is true.
+  file_system_id  = aws_efs_file_system.eks_efs[0].id                                      # References the ID of the EFS created above.
+  subnet_id       = element(module.vpc.private_subnets, count.index)                       # Specifies which private subnet the mount target will be in.
+  security_groups = [module.efs_sg[0].security_group_id]                                   # Security group associated with the EFS mount target.
 }
 
+# This resource creates an access point for the EFS. Access points are application-specific entry points into the EFS.
 resource "aws_efs_access_point" "eks_efs_access_point" {
-  count          = var.enable_aws_efs_csi_driver ? 1 : 0
-  file_system_id = aws_efs_file_system.eks_efs[0].id
+  count          = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the access point if the `enable_aws_efs_csi_driver` variable is true.
+  file_system_id = aws_efs_file_system.eks_efs[0].id     # References the ID of the EFS created above.
 }
 
+# This resource creates a Kubernetes storage class specifically for the EFS. Storage classes define how storage is provisioned and its parameters.
 resource "kubernetes_storage_class" "efs_storage_class" {
-  count = var.enable_aws_efs_csi_driver ? 1 : 0
+  count = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the storage class if the `enable_aws_efs_csi_driver` variable is true.
+
   metadata {
-    name = var.aws_efs_csi_driver_storage_class_name
+    name = var.aws_efs_csi_driver_storage_class_name # Name of the storage class.
   }
 
-  storage_provisioner = var.aws_efs_csi_driver_storage_class_storage_provisioner_name
-  reclaim_policy      = var.aws_efs_csi_driver_storage_class_reclaim_policy
+  storage_provisioner = var.aws_efs_csi_driver_storage_class_storage_provisioner_name # The provisioner responsible for creating the storage.
+  reclaim_policy      = var.aws_efs_csi_driver_storage_class_reclaim_policy           # Specifies what happens to the storage upon deletion (e.g., "Retain" or "Delete").
 
-
-  parameters = {
+  parameters = { # Parameters associated with the storage class.
     provisioningMode = var.aws_efs_csi_driver_storage_class_parameters["provisioningMode"]
     fileSystemId     = aws_efs_file_system.eks_efs[0].id
     directoryPerms   = var.aws_efs_csi_driver_storage_class_parameters["directoryPerms"]
@@ -927,159 +954,180 @@ resource "kubernetes_storage_class" "efs_storage_class" {
   }
 
   depends_on = [
-    module.eks
+    module.eks # Ensures that the EKS module is completely applied before this resource.
   ]
 }
 
+# This resource installs the AWS EFS CSI driver using Helm, a package manager for Kubernetes.
 resource "helm_release" "aws-efs-csi-driver" {
-  count           = var.enable_aws_efs_csi_driver ? 1 : 0
-  name            = "aws-efs-csi-driver"
-  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"
-  chart           = "aws-efs-csi-driver"
-  namespace       = "kube-system"
-  replace         = true
-  version         = var.aws_efs_csi_driver_version
-  atomic          = true
-  cleanup_on_fail = true
+  count           = var.enable_aws_efs_csi_driver ? 1 : 0                   # Only installs the Helm chart if the `enable_aws_efs_csi_driver` variable is true.
+  name            = "aws-efs-csi-driver"                                    # Name of the Helm release.
+  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/" # Helm chart repository URL.
+  chart           = "aws-efs-csi-driver"                                    # The name of the chart to install.
+  namespace       = "kube-system"                                           # Kubernetes namespace where the Helm chart will be installed.
+  replace         = true                                                    # If true, replaces the existing Helm release with the same name.
+  version         = var.aws_efs_csi_driver_version                          # Specifies the chart version to install.
+  atomic          = true                                                    # If set to true, the installation process rolls back changes in case of a failed install.
+  cleanup_on_fail = true                                                    # If set to true, removes resources and rollbacks in case of a failed installation.
 
   set {
-    name  = "controller.serviceAccount.create"
-    value = true
+    name  = "controller.serviceAccount.create" # Configuration parameter for the Helm chart.
+    value = true                               # Sets the `controller.serviceAccount.create` parameter value to true.
   }
 }
 
+# This module creates a security group specifically for the database (DB) cluster.
 module "db_sg" {
-  source = "terraform-aws-modules/security-group/aws"
-  count  = var.create_db_cluster ? 1 : 0
+  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  count  = var.create_db_cluster ? 1 : 0              # Creates the security group only if the 'create_db_cluster' variable is set to true.
 
-  name        = var.db_security_group_name
-  description = "Security group for access from seqera EKS cluster to seqera db"
-  vpc_id      = module.vpc.vpc_id
+  name        = var.db_security_group_name                                       # The name of the security group, sourced from a variable.
+  description = "Security group for access from seqera EKS cluster to seqera db" # Description of the purpose of this security group.
+  vpc_id      = module.vpc.vpc_id                                                # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  ingress_rules       = [var.db_ingress_rule_name]
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = [var.db_ingress_rule_name]             # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
 }
 
+# This module creates a security group specifically for the Redis cluster.
 module "redis_sg" {
-  source = "terraform-aws-modules/security-group/aws"
-  count  = var.create_redis_cluster ? 1 : 0
+  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  count  = var.create_redis_cluster ? 1 : 0           # Creates the security group only if the 'create_redis_cluster' variable is set to true.
 
-  name        = var.redis_security_group_name
-  description = "Security group for access from seqera EKS cluster to seqera redis"
-  vpc_id      = module.vpc.vpc_id
+  name        = var.redis_security_group_name                                       # The name of the security group, sourced from a variable.
+  description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group.
+  vpc_id      = module.vpc.vpc_id                                                   # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  ingress_rules       = [var.redis_ingress_rule]
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = [var.redis_ingress_rule]               # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
 }
 
+# This module creates a security group specifically for the AWS EFS CSI Driver.
 module "efs_sg" {
-  count  = var.enable_aws_efs_csi_driver ? 1 : 0
-  source = "terraform-aws-modules/security-group/aws"
+  count  = var.enable_aws_efs_csi_driver ? 1 : 0      # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
 
-  name        = var.aws_efs_csi_driver_security_group_name
-  description = "Security group for access from seqera EKS cluster to seqera redis"
-  vpc_id      = module.vpc.vpc_id
+  name        = var.aws_efs_csi_driver_security_group_name                          # The name of the security group, sourced from a variable.
+  description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
+  vpc_id      = module.vpc.vpc_id                                                   # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name]
-  egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks                    # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name] # Specific set of ingress rules.
+  egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks                    # Allows outgoing traffic to the private subnets of the VPC.
 }
 
+# This resource generates a random password specifically for the database cluster.
+resource "random_password" "db_seqera_password" {
+  count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
+
+  length           = 16                     # The length of the password will be 16 characters.
+  special          = true                   # Indicates that special characters can be used in the password.
+  override_special = "!#$%&*()-_=+[]{}<>:?" # Specifies which special characters can be used in the password.
+}
+
+# This module creates an RDS (Relational Database Service) instance or cluster in AWS.
 module "db" {
-  source = "terraform-aws-modules/rds/aws"
-  count  = var.create_db_cluster ? 1 : 0
+  source = "terraform-aws-modules/rds/aws" # Utilizes a community Terraform AWS RDS module.
+  count  = var.create_db_cluster ? 1 : 0   # This determines whether to create the DB or not based on a variable.
 
-  identifier                  = var.database_identifier
-  manage_master_user_password = var.db_manage_master_user_password
+  # Basic DB settings
+  identifier                  = var.database_identifier            # Unique identifier for the DB instance.
+  manage_master_user_password = var.db_manage_master_user_password # Whether Terraform manages the master user password.
 
-  engine              = "mysql"
-  engine_version      = var.db_engine_version
-  instance_class      = var.db_instance_class
-  allocated_storage   = var.db_allocated_storage
-  skip_final_snapshot = var.db_skip_final_snapshot
+  engine              = "mysql"                    # Specifies the type of database engine (in this case, MySQL).
+  engine_version      = var.db_engine_version      # The version of the database engine.
+  instance_class      = var.db_instance_class      # Instance type of the RDS instance.
+  allocated_storage   = var.db_allocated_storage   # Allocated storage in gigabytes.
+  skip_final_snapshot = var.db_skip_final_snapshot # Determines if a final DB snapshot is created before the DB instance is deleted.
 
-  db_name  = var.db_name
-  username = var.db_username
-  port     = var.db_port
-  password = var.db_password
+  # Database access configuration
+  db_name  = var.db_name            # The name of the database to be created.
+  username = var.db_seqera_username # Master username for the DB.
+  port     = var.db_port            # The port on which the DB accepts connections.
+  # If a DB password is provided in the variable, use that. Otherwise, use the randomly generated password.
+  password = var.db_seqera_password != "" ? var.db_seqera_password : random_password.db_seqera_password[0].result
 
-  iam_database_authentication_enabled = var.db_iam_database_authentication_enabled
+  iam_database_authentication_enabled = var.db_iam_database_authentication_enabled # Enable IAM authentication for the DB.
 
+  # Linking the DB to the created security group
   vpc_security_group_ids = [module.db_sg[0].security_group_id]
 
-  maintenance_window = var.db_maintenance_window
-  backup_window      = var.db_backup_window
+  # Maintenance and backup settings
+  maintenance_window = var.db_maintenance_window # Time window for DB maintenance.
+  backup_window      = var.db_backup_window      # Preferred window for DB backups.
 
-  # Enhanced Monitoring - see example for details on how to create the role
-  # by yourself, in case you don't want to create it automatically
-  monitoring_interval    = var.db_monitoring_interval
-  monitoring_role_name   = var.db_monitoring_role_name
-  create_monitoring_role = var.db_create_monitoring_role
+  # Enhanced Monitoring settings
+  monitoring_interval    = var.db_monitoring_interval    # Monitoring interval in seconds.
+  monitoring_role_name   = var.db_monitoring_role_name   # IAM role for RDS enhanced monitoring.
+  create_monitoring_role = var.db_create_monitoring_role # Determines if the monitoring role should be created by Terraform.
 
-  tags = var.default_tags
+  tags = var.default_tags # Apply default tags to the resource.
 
-  # DB subnet group
+  # DB subnet group configuration
   db_subnet_group_name = module.vpc.database_subnet_group_name
 
-  # DB parameter group
-  family = var.db_family
+  # DB parameter group configuration
+  family = var.db_family # Database parameter group family.
 
-  # DB option group
-  major_engine_version = var.db_major_engine_version
+  # DB option group configuration
+  major_engine_version = var.db_major_engine_version # Major version of the database engine.
 
-  # Database Deletion Protection
-  deletion_protection = var.db_deletion_protection
+  # Additional DB settings
+  deletion_protection = var.db_deletion_protection # Protection against accidental DB deletion.
 
-  parameters = var.db_parameters
-  options    = var.db_options
+  # Advanced DB configurations
+  parameters = var.db_parameters # Database parameters to apply.
+  options    = var.db_options    # Database options to apply.
 }
 
+# This module creates an Amazon MemoryDB (a fully managed in-memory database service) instance or cluster in AWS.
 module "memory_db" {
-  source = "terraform-aws-modules/memory-db/aws"
-  count  = var.create_redis_cluster ? 1 : 0
+  source = "terraform-aws-modules/memory-db/aws" # Utilizes a community Terraform AWS MemoryDB module.
+  count  = var.create_redis_cluster ? 1 : 0      # Determines whether to create the MemoryDB cluster or not based on a variable.
 
-  # Cluster
-  name        = var.redis_cluster_name
-  description = "seqera MemoryDB cluster"
+  # Basic MemoryDB cluster settings
+  name        = var.redis_cluster_name    # Name of the cluster.
+  description = "seqera MemoryDB cluster" # Description of the cluster.
 
-  engine_version             = var.redis_engine_version
-  auto_minor_version_upgrade = var.redis_auto_minor_version_upgrade
-  node_type                  = var.redis_node_type
-  num_shards                 = var.redis_num_shards
-  num_replicas_per_shard     = var.redis_num_replicas_per_shard
+  # Configuration for the Redis engine
+  engine_version             = var.redis_engine_version             # Redis engine version.
+  auto_minor_version_upgrade = var.redis_auto_minor_version_upgrade # Enables automatic upgrades of minor versions.
+  node_type                  = var.redis_node_type                  # Compute and memory capacity of the node.
+  num_shards                 = var.redis_num_shards                 # Number of shards for the cluster.
+  num_replicas_per_shard     = var.redis_num_replicas_per_shard     # Number of replicas for each shard.
 
-  tls_enabled              = var.redis_tls_enabled
-  security_group_ids       = [module.redis_sg[0].security_group_id]
-  maintenance_window       = var.redis_maintenance_window
-  snapshot_retention_limit = var.redis_snapshot_retention_limit
-  snapshot_window          = var.redis_snapshot_window
-  create_acl               = var.redis_create_acl
-  acl_name                 = var.redis_create_acl ? var.redis_acl_name : "open-access"
+  tls_enabled              = var.redis_tls_enabled                                     # Enable encryption in transit.
+  security_group_ids       = [module.redis_sg[0].security_group_id]                    # Associates the cluster with the created security group.
+  maintenance_window       = var.redis_maintenance_window                              # Time window for MemoryDB maintenance.
+  snapshot_retention_limit = var.redis_snapshot_retention_limit                        # Number of days to retain snapshots.
+  snapshot_window          = var.redis_snapshot_window                                 # Preferred window for taking snapshots.
+  create_acl               = var.redis_create_acl                                      # Determines if an Access Control List (ACL) is created.
+  acl_name                 = var.redis_create_acl ? var.redis_acl_name : "open-access" # Name of the ACL, defaults to "open-access" if not creating an ACL.
 
-  # Users
-  users = var.redis_create_acl ? var.redis_users : {}
+  # User configuration
+  users = var.redis_create_acl ? var.redis_users : {} # Specifies user accounts for accessing the MemoryDB cluster.
 
-  # Parameter group
-  parameter_group_name        = var.redis_parameter_group_name
-  parameter_group_description = var.redis_parameter_group_description
-  parameter_group_family      = var.redis_parameter_group_family
-  parameter_group_parameters  = var.redis_parameter_group_parameters
-  parameter_group_tags        = var.redis_parameter_group_tags
+  # Parameter group settings
+  parameter_group_name        = var.redis_parameter_group_name        # Name of the parameter group.
+  parameter_group_description = var.redis_parameter_group_description # Description of the parameter group.
+  parameter_group_family      = var.redis_parameter_group_family      # Engine family of the parameter group.
+  parameter_group_parameters  = var.redis_parameter_group_parameters  # Database parameters to apply to the parameter group.
+  parameter_group_tags        = var.redis_parameter_group_tags        # Tags to apply to the parameter group.
 
-  # Subnet group
-  create_subnet_group      = var.redis_create_subnet_group
-  subnet_group_name        = var.redis_subnet_group_name
-  subnet_group_description = var.redis_subnet_group_description
-  subnet_ids               = module.vpc.elasticache_subnets
+  # Subnet group settings
+  create_subnet_group      = var.redis_create_subnet_group      # Determines if a subnet group should be created.
+  subnet_group_name        = var.redis_subnet_group_name        # Name of the subnet group.
+  subnet_group_description = var.redis_subnet_group_description # Description of the subnet group.
+  subnet_ids               = module.vpc.elasticache_subnets     # Subnet IDs associated with the subnet group.
 
-  tags = var.default_tags
+  tags = var.default_tags # Apply default tags to the resource.
 }
 
 locals {
   # The following local variables are used to create unique IAM names (roles and policies).
   # The names are constructed by combining the input variable, the cluster name, region, 
   # and a random hexadecimal value (`random_id.this.hex`).
-  
+
   seqera_irsa_role_name                       = "${var.seqera_irsa_role_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   seqera_irsa_iam_policy_name                 = "${var.seqera_irsa_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
   aws_loadbalancer_controller_iam_policy_name = "${var.aws_loadbalancer_controller_iam_policy_name}-${var.cluster_name}-${var.region}-${random_id.this.hex}"
@@ -1121,83 +1169,83 @@ locals {
 # This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.create_seqera_service_account ? 1 : 0  # Conditional creation of the IAM policy based on the variable.
+  count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
 
   name        = local.seqera_irsa_iam_policy_name
-  path        = "/"  # The path in which the policy is created.
+  path        = "/" # The path in which the policy is created.
   description = "This policy provides the permissions needed for seqera service account to interact with the required AWS services."
 
-  policy = var.seqera_platform_service_account_iam_policy  # Policy content or document.
+  policy = var.seqera_platform_service_account_iam_policy # Policy content or document.
 
-  tags = var.default_tags  # Assigning default tags.
+  tags = var.default_tags # Assigning default tags.
 }
 
 # This module creates an IAM policy for the AWS Load Balancer Controller.
 module "aws_loadbalancer_controller_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_loadbalancer_controller ? 1 : 0  # Conditional creation based on the variable.
+  count  = var.enable_aws_loadbalancer_controller ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
   path        = "/"
   description = "This policy provides the permissions needed for AWS loadBalancer controller"
 
-  policy = var.aws_loadbalancer_controller_iam_policy  # Policy content or document.
+  policy = var.aws_loadbalancer_controller_iam_policy # Policy content or document.
 
-  tags = var.default_tags  # Assigning default tags.
+  tags = var.default_tags # Assigning default tags.
 }
 
 # This module creates an IAM policy for the AWS EFS CSI Driver.
 module "aws_efs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_efs_csi_driver ? 1 : 0  # Conditional creation based on the variable.
+  count  = var.enable_aws_efs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_efs_csi_driver_iam_policy_name
   path        = "/"
   description = "This policy provides the permissions needed for AWS EFS CSI driver"
 
-  policy = var.aws_efs_csi_driver_iam_policy  # Policy content or document.
+  policy = var.aws_efs_csi_driver_iam_policy # Policy content or document.
 
-  tags = var.default_tags  # Assigning default tags.
+  tags = var.default_tags # Assigning default tags.
 }
 
 # This module creates an IAM policy for the AWS Cluster Autoscaler.
 module "aws_cluster_autoscaler_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_cluster_autoscaler ? 1 : 0  # Conditional creation based on the variable.
+  count  = var.enable_aws_cluster_autoscaler ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_cluster_autoscaler_iam_policy_name
   path        = "/"
   description = "This policy provides the permissions needed for AWS cluster autoscaler"
 
-  policy = var.aws_cluster_autoscaler_iam_policy  # Policy content or document.
+  policy = var.aws_cluster_autoscaler_iam_policy # Policy content or document.
 
-  tags = var.default_tags  # Assigning default tags.
+  tags = var.default_tags # Assigning default tags.
 }
 
 # This module creates an IAM policy for the EBS CSI Driver.
 module "aws_ebs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  count  = var.enable_aws_ebs_csi_driver ? 1 : 0  # Conditional creation based on the variable.
+  count  = var.enable_aws_ebs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_ebs_csi_driver_iam_policy_name
   path        = "/"
   description = "This policy provides the permissions needed for EBS CSI driver"
 
-  policy = var.aws_ebs_csi_driver_iam_policy  # Policy content or document.
+  policy = var.aws_ebs_csi_driver_iam_policy # Policy content or document.
 
-  tags = var.default_tags  # Assigning default tags.
+  tags = var.default_tags # Assigning default tags.
 }
 
 # This module creates an IAM role for service accounts for Seqera.
 # Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  count  = var.create_seqera_service_account ? 1 : 0  # Conditional creation based on the variable.
+  count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation based on the variable.
 
   role_name = local.seqera_irsa_role_name
 
-  attach_vpc_cni_policy = true  # Attach the VPC CNI policy to this IAM role.
-  vpc_cni_enable_ipv4   = true  # Enable IPv4 for VPC CNI.
+  attach_vpc_cni_policy = true # Attach the VPC CNI policy to this IAM role.
+  vpc_cni_enable_ipv4   = true # Enable IPv4 for VPC CNI.
 
   # Configuring the OpenID Connect (OIDC) provider for EKS. This is important for establishing the relationship 
   # between a Kubernetes service account and an AWS IAM role.
@@ -1216,7 +1264,7 @@ module "seqera_irsa" {
   }
 
   tags = {
-    Name = local.seqera_irsa_role_name  # Assigning the role name as a tag.
+    Name = local.seqera_irsa_role_name # Assigning the role name as a tag.
   }
 }
 

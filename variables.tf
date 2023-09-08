@@ -1094,18 +1094,18 @@ variable "db_name" {
   description = "The name of the database."
 }
 
-## Database Username
-variable "db_username" {
+## Database Seqera User Name
+variable "db_seqera_username" {
   type        = string
-  default     = "admin"
+  default     = "seqera"
   description = "The username for the database."
 }
 
-## Database Password
-variable "db_password" {
+## Database Seqera User Password
+variable "db_seqera_password" {
   type        = string
-  default     = "my_db_password"
-  description = "Password for the master DB user. Note that this may show up in logs, and it will be stored in the state file. The password provided will not be used if `manage_master_user_password` is set to true."
+  default     = ""
+  description = "Password for the Seqera DB user."
 }
 
 ## Database Port
