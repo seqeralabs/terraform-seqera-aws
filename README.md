@@ -129,18 +129,18 @@ This Terraform code is licensed under the Apache License
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#module\_aws\_cluster\_autoscaler\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
-| <a name="module_aws_ebs_csi_driver_iam_policy"></a> [aws\_ebs\_csi\_driver\_iam\_policy](#module\_aws\_ebs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
-| <a name="module_aws_efs_csi_driver_iam_policy"></a> [aws\_efs\_csi\_driver\_iam\_policy](#module\_aws\_efs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
-| <a name="module_aws_loadbalancer_controller_iam_policy"></a> [aws\_loadbalancer\_controller\_iam\_policy](#module\_aws\_loadbalancer\_controller\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
-| <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | n/a |
-| <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | n/a |
-| <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | n/a |
+| <a name="module_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#module\_aws\_cluster\_autoscaler\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_aws_ebs_csi_driver_iam_policy"></a> [aws\_ebs\_csi\_driver\_iam\_policy](#module\_aws\_ebs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_aws_efs_csi_driver_iam_policy"></a> [aws\_efs\_csi\_driver\_iam\_policy](#module\_aws\_efs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_aws_loadbalancer_controller_iam_policy"></a> [aws\_loadbalancer\_controller\_iam\_policy](#module\_aws\_loadbalancer\_controller\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | 6.1.1 |
+| <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
+| <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~> 19.0 |
-| <a name="module_memory_db"></a> [memory\_db](#module\_memory\_db) | terraform-aws-modules/memory-db/aws | n/a |
-| <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | n/a |
-| <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | n/a |
-| <a name="module_seqera_irsa"></a> [seqera\_irsa](#module\_seqera\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_memory_db"></a> [memory\_db](#module\_memory\_db) | terraform-aws-modules/memory-db/aws | 2.0.0 |
+| <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
+| <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_seqera_irsa"></a> [seqera\_irsa](#module\_seqera\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | 5.30.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | n/a |
 
 ## Resources
