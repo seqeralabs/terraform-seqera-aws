@@ -46,6 +46,7 @@ data "aws_caller_identity" "current" {}
 # subnets, internet gateways, route tables, and network gateways.
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws" # The source from where the module is fetched.
+  version = "5.1.2" # Specifies the version of the module to use.
 
   # Define the VPC name and CIDR block.
   name = var.vpc_name
