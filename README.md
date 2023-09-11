@@ -50,10 +50,6 @@ module "terraform-seqera-module" {
     "arn:aws:iam::1234567890123:user/MyIAMUSer"
   ]
 
-  enable_ebs_csi_driver = true
-  enable_aws_loadbalancer_controller = true
-  enable_aws_cluster_autoscaler = true
-
   default_tags = {
     Environment = "myenvironment"
     ManagedBy   = "Terraform"
@@ -163,7 +159,6 @@ This Terraform code is licensed under the Apache License
 | [kubernetes_namespace_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/namespace_v1) | resource |
 | [kubernetes_service_account_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/service_account_v1) | resource |
 | [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
-| [random_id.this](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/id) | resource |
 | [random_password.db_seqera_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
 
