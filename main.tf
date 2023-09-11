@@ -970,6 +970,7 @@ resource "helm_release" "aws-efs-csi-driver" {
 # This module creates a security group specifically for the database (DB) cluster.
 module "db_sg" {
   source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  version = "5.1.0"                                   # Specifies the version of the module to use.
   count  = var.create_db_cluster ? 1 : 0              # Creates the security group only if the 'create_db_cluster' variable is set to true.
 
   name        = var.db_security_group_name                                       # The name of the security group, sourced from a variable.
@@ -983,6 +984,7 @@ module "db_sg" {
 # This module creates a security group specifically for the Redis cluster.
 module "redis_sg" {
   source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  version = "5.1.0"                                   # Specifies the version of the module to use.
   count  = var.create_redis_cluster ? 1 : 0           # Creates the security group only if the 'create_redis_cluster' variable is set to true.
 
   name        = var.redis_security_group_name                                       # The name of the security group, sourced from a variable.
@@ -996,6 +998,7 @@ module "redis_sg" {
 # This module creates a security group specifically for the AWS EFS CSI Driver.
 module "efs_sg" {
   count  = var.enable_aws_efs_csi_driver ? 1 : 0      # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  version = "5.1.0"                                   # Specifies the version of the module to use.
   source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
 
   name        = var.aws_efs_csi_driver_security_group_name                          # The name of the security group, sourced from a variable.
@@ -1019,6 +1022,7 @@ resource "random_password" "db_seqera_password" {
 # This module creates an RDS (Relational Database Service) instance or cluster in AWS.
 module "db" {
   source = "terraform-aws-modules/rds/aws" # Utilizes a community Terraform AWS RDS module.
+  version = "6.1.1"                         # Specifies the version of the module to use.
   count  = var.create_db_cluster ? 1 : 0   # This determines whether to create the DB or not based on a variable.
 
   # Basic DB settings
@@ -1074,6 +1078,7 @@ module "db" {
 # This module creates an Amazon MemoryDB (a fully managed in-memory database service) instance or cluster in AWS.
 module "memory_db" {
   source = "terraform-aws-modules/memory-db/aws" # Utilizes a community Terraform AWS MemoryDB module.
+  version = "2.0.0"                              # Specifies the version of the module to use.
   count  = var.create_redis_cluster ? 1 : 0      # Determines whether to create the MemoryDB cluster or not based on a variable.
 
   # Basic MemoryDB cluster settings
@@ -1160,6 +1165,7 @@ locals {
 # This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0" # Specifies the version of the module to use.
   count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
 
   name        = local.seqera_irsa_iam_policy_name
@@ -1174,6 +1180,7 @@ module "seqera_iam_policy" {
 # This module creates an IAM policy for the AWS Load Balancer Controller.
 module "aws_loadbalancer_controller_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0" # Specifies the version of the module to use.
   count  = var.enable_aws_loadbalancer_controller ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
@@ -1188,6 +1195,7 @@ module "aws_loadbalancer_controller_iam_policy" {
 # This module creates an IAM policy for the AWS EFS CSI Driver.
 module "aws_efs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"  # Specifies the version of the module to use.
   count  = var.enable_aws_efs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_efs_csi_driver_iam_policy_name
@@ -1202,6 +1210,7 @@ module "aws_efs_csi_driver_iam_policy" {
 # This module creates an IAM policy for the AWS Cluster Autoscaler.
 module "aws_cluster_autoscaler_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0" # Specifies the version of the module to use.
   count  = var.enable_aws_cluster_autoscaler ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_cluster_autoscaler_iam_policy_name
@@ -1216,6 +1225,7 @@ module "aws_cluster_autoscaler_iam_policy" {
 # This module creates an IAM policy for the EBS CSI Driver.
 module "aws_ebs_csi_driver_iam_policy" {
   source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0" # Specifies the version of the module to use.
   count  = var.enable_aws_ebs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_ebs_csi_driver_iam_policy_name
@@ -1231,6 +1241,7 @@ module "aws_ebs_csi_driver_iam_policy" {
 # Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.30.0"  # Specifies the version of the module to use.
   count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation based on the variable.
 
   role_name = local.seqera_irsa_role_name
