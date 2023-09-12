@@ -1280,14 +1280,14 @@ variable "redis_node_type" {
 variable "redis_num_shards" {
   type        = number
   description = "The number of shards in the Redis cluster."
-  default     = 2
+  default     = 1
 }
 
 ## Redis Number of Replicas per Shard
 variable "redis_num_replicas_per_shard" {
   type        = number
   description = "The number of replicas per shard in the Redis cluster."
-  default     = 2
+  default     = 1
 }
 
 ## Redis TLS Enabled
