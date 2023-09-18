@@ -108,7 +108,7 @@ This Terraform code is licensed under the Apache License
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13.1 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | 5.0.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | 2.11.0 |
 | <a name="requirement_kubectl"></a> [kubectl](#requirement\_kubectl) | 1.14.0 |
@@ -137,10 +137,11 @@ This Terraform code is licensed under the Apache License
 | <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~> 19.0 |
-| <a name="module_memory_db"></a> [memory\_db](#module\_memory\_db) | terraform-aws-modules/memory-db/aws | 2.0.0 |
+| <a name="module_redis"></a> [redis](#module\_redis) | cloudposse/elasticache-redis/aws | 0.52.0 |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_seqera_irsa"></a> [seqera\_irsa](#module\_seqera\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | 5.30.0 |
+| <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 5.1.2 |
 
 ## Resources
@@ -246,29 +247,27 @@ This Terraform code is licensed under the Apache License
 | <a name="input_enable_vpn_gateway"></a> [enable\_vpn\_gateway](#input\_enable\_vpn\_gateway) | Determines whether a VPN gateway should be provisioned. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the infrastructure is being deployed. | `string` | `""` | no |
 | <a name="input_one_nat_gateway_per_az"></a> [one\_nat\_gateway\_per\_az](#input\_one\_nat\_gateway\_per\_az) | Determines whether each Availability Zone should have a dedicated NAT gateway. | `bool` | `true` | no |
-| <a name="input_redis_acl_name"></a> [redis\_acl\_name](#input\_redis\_acl\_name) | # Redis ACL Name | `string` | `"open-access"` | no |
+| <a name="input_redis_apply_immediately"></a> [redis\_apply\_immediately](#input\_redis\_apply\_immediately) | Determines whether changes should be applied immediately for Redis. | `bool` | `true` | no |
+| <a name="input_redis_at_rest_encryption_enabled"></a> [redis\_at\_rest\_encryption\_enabled](#input\_redis\_at\_rest\_encryption\_enabled) | Determines whether encryption at rest is enabled for Redis. | `bool` | `false` | no |
 | <a name="input_redis_auto_minor_version_upgrade"></a> [redis\_auto\_minor\_version\_upgrade](#input\_redis\_auto\_minor\_version\_upgrade) | Determines whether automatic minor version upgrades are enabled for Redis. | `bool` | `false` | no |
+| <a name="input_redis_automatic_failover_enabled"></a> [redis\_automatic\_failover\_enabled](#input\_redis\_automatic\_failover\_enabled) | Determines whether automatic failover is enabled for Redis. | `bool` | `false` | no |
+| <a name="input_redis_cluster_description"></a> [redis\_cluster\_description](#input\_redis\_cluster\_description) | The description of the Redis cluster. | `string` | `"Seqera Redis cluster"` | no |
 | <a name="input_redis_cluster_name"></a> [redis\_cluster\_name](#input\_redis\_cluster\_name) | The name of the Redis cluster. | `string` | `"seqera-redis"` | no |
-| <a name="input_redis_create_acl"></a> [redis\_create\_acl](#input\_redis\_create\_acl) | Determines whether an ACL should be created for Redis. | `bool` | `false` | no |
+| <a name="input_redis_cluster_size"></a> [redis\_cluster\_size](#input\_redis\_cluster\_size) | The size of the Redis cluster. | `number` | `1` | no |
 | <a name="input_redis_create_subnet_group"></a> [redis\_create\_subnet\_group](#input\_redis\_create\_subnet\_group) | Determines whether to create a Redis subnet group. | `bool` | `true` | no |
 | <a name="input_redis_engine_version"></a> [redis\_engine\_version](#input\_redis\_engine\_version) | The version of the Redis engine. | `string` | `"6.2"` | no |
+| <a name="input_redis_family"></a> [redis\_family](#input\_redis\_family) | The family of the Redis engine. | `string` | `"redis6.x"` | no |
 | <a name="input_redis_ingress_rule"></a> [redis\_ingress\_rule](#input\_redis\_ingress\_rule) | The ingress rule for the Redis cluster. | `string` | `"redis-tcp"` | no |
+| <a name="input_redis_instance_type"></a> [redis\_instance\_type](#input\_redis\_instance\_type) | The Redis node type. | `string` | `"cache.t2.small"` | no |
 | <a name="input_redis_maintenance_window"></a> [redis\_maintenance\_window](#input\_redis\_maintenance\_window) | The maintenance window for the Redis cluster. | `string` | `"sun:23:00-mon:01:30"` | no |
-| <a name="input_redis_node_type"></a> [redis\_node\_type](#input\_redis\_node\_type) | The Redis node type. | `string` | `"db.t4g.small"` | no |
-| <a name="input_redis_num_replicas_per_shard"></a> [redis\_num\_replicas\_per\_shard](#input\_redis\_num\_replicas\_per\_shard) | The number of replicas per shard in the Redis cluster. | `number` | `2` | no |
-| <a name="input_redis_num_shards"></a> [redis\_num\_shards](#input\_redis\_num\_shards) | The number of shards in the Redis cluster. | `number` | `2` | no |
-| <a name="input_redis_parameter_group_description"></a> [redis\_parameter\_group\_description](#input\_redis\_parameter\_group\_description) | The description of the Redis parameter group. | `string` | `"Redis MemoryDB parameter group"` | no |
-| <a name="input_redis_parameter_group_family"></a> [redis\_parameter\_group\_family](#input\_redis\_parameter\_group\_family) | The family of the Redis parameter group. | `string` | `"memorydb_redis6"` | no |
-| <a name="input_redis_parameter_group_name"></a> [redis\_parameter\_group\_name](#input\_redis\_parameter\_group\_name) | The name of the Redis parameter group. | `string` | `"redis-param-group"` | no |
-| <a name="input_redis_parameter_group_parameters"></a> [redis\_parameter\_group\_parameters](#input\_redis\_parameter\_group\_parameters) | A list of Redis parameter configurations. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "activedefrag",<br>    "value": "yes"<br>  }<br>]</pre> | no |
-| <a name="input_redis_parameter_group_tags"></a> [redis\_parameter\_group\_tags](#input\_redis\_parameter\_group\_tags) | Tags to be applied to the Redis parameter group. | `map(string)` | <pre>{<br>  "ParameterGroup": "custom"<br>}</pre> | no |
+| <a name="input_redis_parameter_group_description"></a> [redis\_parameter\_group\_description](#input\_redis\_parameter\_group\_description) | The description of the Redis parameter group. | `string` | `"Redis Redis parameter group"` | no |
+| <a name="input_redis_parameters"></a> [redis\_parameters](#input\_redis\_parameters) | The list of Redis parameters. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "notify-keyspace-events",<br>    "value": "lK"<br>  }<br>]</pre> | no |
 | <a name="input_redis_security_group_name"></a> [redis\_security\_group\_name](#input\_redis\_security\_group\_name) | The name of the security group for Redis. | `string` | `"seqera_redis_security_group"` | no |
 | <a name="input_redis_snapshot_retention_limit"></a> [redis\_snapshot\_retention\_limit](#input\_redis\_snapshot\_retention\_limit) | The number of days to retain Redis snapshots. | `number` | `7` | no |
 | <a name="input_redis_snapshot_window"></a> [redis\_snapshot\_window](#input\_redis\_snapshot\_window) | The window during which Redis snapshots are taken. | `string` | `"05:00-09:00"` | no |
-| <a name="input_redis_subnet_group_description"></a> [redis\_subnet\_group\_description](#input\_redis\_subnet\_group\_description) | The description of the Redis subnet group. | `string` | `"Seqera MemoryDB subnet group"` | no |
+| <a name="input_redis_subnet_group_description"></a> [redis\_subnet\_group\_description](#input\_redis\_subnet\_group\_description) | The description of the Redis subnet group. | `string` | `"Seqera Redis subnet group"` | no |
 | <a name="input_redis_subnet_group_name"></a> [redis\_subnet\_group\_name](#input\_redis\_subnet\_group\_name) | The name of the Redis subnet group. | `string` | `"seqera-redis-subnetgroup"` | no |
-| <a name="input_redis_tls_enabled"></a> [redis\_tls\_enabled](#input\_redis\_tls\_enabled) | Determines whether TLS (Transport Layer Security) is enabled for Redis. | `bool` | `false` | no |
-| <a name="input_redis_users"></a> [redis\_users](#input\_redis\_users) | A map of Redis user configurations. | <pre>map(object({<br>    user_name     = string<br>    access_string = string<br>    passwords     = list(string)<br>    tags          = map(string)<br>  }))</pre> | <pre>{<br>  "admin": {<br>    "access_string": "on ~* &* +@all",<br>    "passwords": [<br>      "YouShouldPickAStrongSecurePassword987!"<br>    ],<br>    "tags": {<br>      "User": "admin"<br>    },<br>    "user_name": "seqera-admin-user"<br>  },<br>  "readonly": {<br>    "access_string": "on ~* &* -@all +@read",<br>    "passwords": [<br>      "YouShouldPickAStrongSecurePassword123!"<br>    ],<br>    "tags": {<br>      "User": "readonly"<br>    },<br>    "user_name": "seqera-readonly-user"<br>  }<br>}</pre> | no |
+| <a name="input_redis_transit_encryption_enabled"></a> [redis\_transit\_encryption\_enabled](#input\_redis\_transit\_encryption\_enabled) | Determines whether encryption in transit is enabled for Redis. | `bool` | `false` | no |
 | <a name="input_region"></a> [region](#input\_region) | The AWS region in which the resources will be provisioned. | `string` | `""` | no |
 | <a name="input_seqera_irsa_iam_policy_name"></a> [seqera\_irsa\_iam\_policy\_name](#input\_seqera\_irsa\_iam\_policy\_name) | The name of the IAM policy for IRSA. | `string` | `"seqera-irsa-iam-policy"` | no |
 | <a name="input_seqera_irsa_role_name"></a> [seqera\_irsa\_role\_name](#input\_seqera\_irsa\_role\_name) | The name of the IAM role for IRSA. | `string` | `"seqera-irsa-role"` | no |

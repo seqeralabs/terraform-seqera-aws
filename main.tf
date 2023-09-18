@@ -45,8 +45,8 @@ data "aws_caller_identity" "current" {}
 # VPCs provide isolation for AWS resources and allow one to define a network with their own IP address range,
 # subnets, internet gateways, route tables, and network gateways.
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws" # The source from where the module is fetched.
-  version = "5.1.2" # Specifies the version of the module to use.
+  source  = "terraform-aws-modules/vpc/aws" # The source from where the module is fetched.
+  version = "5.1.2"                         # Specifies the version of the module to use.
 
   # Define the VPC name and CIDR block.
   name = var.vpc_name
@@ -970,9 +970,9 @@ resource "helm_release" "aws-efs-csi-driver" {
 
 # This module creates a security group specifically for the database (DB) cluster.
 module "db_sg" {
-  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
-  version = "5.1.0"                                   # Specifies the version of the module to use.
-  count  = var.create_db_cluster ? 1 : 0              # Creates the security group only if the 'create_db_cluster' variable is set to true.
+  source  = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  version = "5.1.0"                                    # Specifies the version of the module to use.
+  count   = var.create_db_cluster ? 1 : 0              # Creates the security group only if the 'create_db_cluster' variable is set to true.
 
   name        = var.db_security_group_name                                       # The name of the security group, sourced from a variable.
   description = "Security group for access from seqera EKS cluster to seqera db" # Description of the purpose of this security group.
@@ -984,9 +984,9 @@ module "db_sg" {
 
 # This module creates a security group specifically for the Redis cluster.
 module "redis_sg" {
-  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
-  version = "5.1.0"                                   # Specifies the version of the module to use.
-  count  = var.create_redis_cluster ? 1 : 0           # Creates the security group only if the 'create_redis_cluster' variable is set to true.
+  source  = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  version = "5.1.0"                                    # Specifies the version of the module to use.
+  count   = var.create_redis_cluster ? 1 : 0           # Creates the security group only if the 'create_redis_cluster' variable is set to true.
 
   name        = var.redis_security_group_name                                       # The name of the security group, sourced from a variable.
   description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group.
@@ -998,9 +998,9 @@ module "redis_sg" {
 
 # This module creates a security group specifically for the AWS EFS CSI Driver.
 module "efs_sg" {
-  count  = var.enable_aws_efs_csi_driver ? 1 : 0      # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
-  version = "5.1.0"                                   # Specifies the version of the module to use.
-  source = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  count   = var.enable_aws_efs_csi_driver ? 1 : 0      # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  version = "5.1.0"                                    # Specifies the version of the module to use.
+  source  = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
 
   name        = var.aws_efs_csi_driver_security_group_name                          # The name of the security group, sourced from a variable.
   description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
@@ -1022,9 +1022,9 @@ resource "random_password" "db_seqera_password" {
 
 # This module creates an RDS (Relational Database Service) instance or cluster in AWS.
 module "db" {
-  source = "terraform-aws-modules/rds/aws" # Utilizes a community Terraform AWS RDS module.
+  source  = "terraform-aws-modules/rds/aws" # Utilizes a community Terraform AWS RDS module.
   version = "6.1.1"                         # Specifies the version of the module to use.
-  count  = var.create_db_cluster ? 1 : 0   # This determines whether to create the DB or not based on a variable.
+  count   = var.create_db_cluster ? 1 : 0   # This determines whether to create the DB or not based on a variable.
 
   # Basic DB settings
   identifier                  = var.database_identifier            # Unique identifier for the DB instance.
@@ -1076,48 +1076,57 @@ module "db" {
   options    = var.db_options    # Database options to apply.
 }
 
-# This module creates an Amazon MemoryDB (a fully managed in-memory database service) instance or cluster in AWS.
-module "memory_db" {
-  source = "terraform-aws-modules/memory-db/aws" # Utilizes a community Terraform AWS MemoryDB module.
-  version = "2.0.0"                              # Specifies the version of the module to use.
-  count  = var.create_redis_cluster ? 1 : 0      # Determines whether to create the MemoryDB cluster or not based on a variable.
+# Terraform Module to define a consistent naming convention by (namespace, stage, name, [attributes])
+module "this" {
+  source  = "cloudposse/label/null"
+  version = "0.25.0"
+  count   = var.create_redis_cluster ? 1 : 0
 
-  # Basic MemoryDB cluster settings
-  name        = var.redis_cluster_name    # Name of the cluster.
-  description = "seqera MemoryDB cluster" # Description of the cluster.
+  namespace = "default"
+  stage     = var.environment
+  name      = var.cluster_name
+}
 
-  # Configuration for the Redis engine
-  engine_version             = var.redis_engine_version             # Redis engine version.
-  auto_minor_version_upgrade = var.redis_auto_minor_version_upgrade # Enables automatic upgrades of minor versions.
-  node_type                  = var.redis_node_type                  # Compute and memory capacity of the node.
-  num_shards                 = var.redis_num_shards                 # Number of shards for the cluster.
-  num_replicas_per_shard     = var.redis_num_replicas_per_shard     # Number of replicas for each shard.
+# Terraform module to provision an ElastiCache Redis Cluster.
+module "redis" {
+  source  = "cloudposse/elasticache-redis/aws"
+  version = "0.52.0"
+  count   = var.create_redis_cluster ? 1 : 0
 
-  tls_enabled              = var.redis_tls_enabled                                     # Enable encryption in transit.
-  security_group_ids       = [module.redis_sg[0].security_group_id]                    # Associates the cluster with the created security group.
-  maintenance_window       = var.redis_maintenance_window                              # Time window for MemoryDB maintenance.
-  snapshot_retention_limit = var.redis_snapshot_retention_limit                        # Number of days to retain snapshots.
-  snapshot_window          = var.redis_snapshot_window                                 # Preferred window for taking snapshots.
-  create_acl               = var.redis_create_acl                                      # Determines if an Access Control List (ACL) is created.
-  acl_name                 = var.redis_create_acl ? var.redis_acl_name : "open-access" # Name of the ACL, defaults to "open-access" if not creating an ACL.
+  availability_zones            = var.azs
+  vpc_id                        = module.vpc.vpc_id
+  description                   = var.redis_cluster_description
+  allowed_security_group_ids    = [module.eks.cluster_primary_security_group_id]
+  auto_minor_version_upgrade    = var.redis_auto_minor_version_upgrade
+  replication_group_id          = "${var.cluster_name}-redis"
+  associated_security_group_ids = [module.redis_sg[0].security_group_id]
+  elasticache_subnet_group_name = module.vpc.elasticache_subnet_group_name
+  create_security_group         = false
+  subnets                       = module.vpc.elasticache_subnets
+  cluster_size                  = var.redis_cluster_size
+  instance_type                 = var.redis_instance_type
+  apply_immediately             = var.redis_apply_immediately
+  automatic_failover_enabled    = var.redis_automatic_failover_enabled
+  engine_version                = var.redis_engine_version
+  family                        = var.redis_family
+  at_rest_encryption_enabled    = var.redis_at_rest_encryption_enabled
+  transit_encryption_enabled    = var.redis_transit_encryption_enabled
+  maintenance_window            = var.redis_maintenance_window
+  snapshot_retention_limit      = var.redis_snapshot_retention_limit
+  snapshot_window               = var.redis_snapshot_window
 
-  # User configuration
-  users = var.redis_create_acl ? var.redis_users : {} # Specifies user accounts for accessing the MemoryDB cluster.
+  parameter                   = var.redis_parameters
+  parameter_group_description = var.redis_parameter_group_description
 
-  # Parameter group settings
-  parameter_group_name        = var.redis_parameter_group_name        # Name of the parameter group.
-  parameter_group_description = var.redis_parameter_group_description # Description of the parameter group.
-  parameter_group_family      = var.redis_parameter_group_family      # Engine family of the parameter group.
-  parameter_group_parameters  = var.redis_parameter_group_parameters  # Database parameters to apply to the parameter group.
-  parameter_group_tags        = var.redis_parameter_group_tags        # Tags to apply to the parameter group.
+  context = module.this[0].context
 
-  # Subnet group settings
-  create_subnet_group      = var.redis_create_subnet_group      # Determines if a subnet group should be created.
-  subnet_group_name        = var.redis_subnet_group_name        # Name of the subnet group.
-  subnet_group_description = var.redis_subnet_group_description # Description of the subnet group.
-  subnet_ids               = module.vpc.elasticache_subnets     # Subnet IDs associated with the subnet group.
+  tags = var.default_tags
 
-  tags = var.default_tags # Apply default tags to the resource.
+  depends_on = [
+    module.vpc,
+    module.redis_sg,
+    module.this
+  ]
 }
 
 locals {
@@ -1165,9 +1174,9 @@ locals {
 }
 # This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0" # Specifies the version of the module to use.
-  count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"                                  # Specifies the version of the module to use.
+  count   = var.create_seqera_service_account ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
 
   name        = local.seqera_irsa_iam_policy_name
   path        = "/" # The path in which the policy is created.
@@ -1180,9 +1189,9 @@ module "seqera_iam_policy" {
 
 # This module creates an IAM policy for the AWS Load Balancer Controller.
 module "aws_loadbalancer_controller_iam_policy" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0" # Specifies the version of the module to use.
-  count  = var.enable_aws_loadbalancer_controller ? 1 : 0 # Conditional creation based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"                                       # Specifies the version of the module to use.
+  count   = var.enable_aws_loadbalancer_controller ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
   path        = "/"
@@ -1195,9 +1204,9 @@ module "aws_loadbalancer_controller_iam_policy" {
 
 # This module creates an IAM policy for the AWS EFS CSI Driver.
 module "aws_efs_csi_driver_iam_policy" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"  # Specifies the version of the module to use.
-  count  = var.enable_aws_efs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"                              # Specifies the version of the module to use.
+  count   = var.enable_aws_efs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_efs_csi_driver_iam_policy_name
   path        = "/"
@@ -1210,9 +1219,9 @@ module "aws_efs_csi_driver_iam_policy" {
 
 # This module creates an IAM policy for the AWS Cluster Autoscaler.
 module "aws_cluster_autoscaler_iam_policy" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0" # Specifies the version of the module to use.
-  count  = var.enable_aws_cluster_autoscaler ? 1 : 0 # Conditional creation based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"                                  # Specifies the version of the module to use.
+  count   = var.enable_aws_cluster_autoscaler ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_cluster_autoscaler_iam_policy_name
   path        = "/"
@@ -1225,9 +1234,9 @@ module "aws_cluster_autoscaler_iam_policy" {
 
 # This module creates an IAM policy for the EBS CSI Driver.
 module "aws_ebs_csi_driver_iam_policy" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0" # Specifies the version of the module to use.
-  count  = var.enable_aws_ebs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.30.0"                              # Specifies the version of the module to use.
+  count   = var.enable_aws_ebs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_ebs_csi_driver_iam_policy_name
   path        = "/"
@@ -1241,9 +1250,9 @@ module "aws_ebs_csi_driver_iam_policy" {
 # This module creates an IAM role for service accounts for Seqera.
 # Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.30.0"  # Specifies the version of the module to use.
-  count  = var.create_seqera_service_account ? 1 : 0 # Conditional creation based on the variable.
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.30.0"                                  # Specifies the version of the module to use.
+  count   = var.create_seqera_service_account ? 1 : 0 # Conditional creation based on the variable.
 
   role_name = local.seqera_irsa_role_name
 

@@ -1239,7 +1239,7 @@ variable "db_deletion_protection" {
   description = "Determines whether deletion protection is enabled for the database."
 }
 
-## Redis MemoryDB Cluster
+## Redis Redis Cluster
 
 ## Redis Engine Version
 variable "create_redis_cluster" {
@@ -1262,6 +1262,20 @@ variable "redis_cluster_name" {
   description = "The name of the Redis cluster."
 }
 
+## Redis Cluster Description
+variable "redis_cluster_description" {
+  type        = string
+  description = "The description of the Redis cluster."
+  default     = "Seqera Redis cluster"
+}
+
+## Redis Cluster Size
+variable "redis_cluster_size" {
+  type        = number
+  description = "The size of the Redis cluster."
+  default     = 1
+}
+
 ## Redis Auto Minor Version Upgrade
 variable "redis_auto_minor_version_upgrade" {
   type        = bool
@@ -1270,44 +1284,60 @@ variable "redis_auto_minor_version_upgrade" {
 }
 
 ## Redis Node Type
-variable "redis_node_type" {
+variable "redis_instance_type" {
   type        = string
   description = "The Redis node type."
-  default     = "db.t4g.small"
+  default     = "cache.t2.small"
 }
 
-## Redis Number of Shards
-variable "redis_num_shards" {
-  type        = number
-  description = "The number of shards in the Redis cluster."
-  default     = 1
-}
-
-## Redis Number of Replicas per Shard
-variable "redis_num_replicas_per_shard" {
-  type        = number
-  description = "The number of replicas per shard in the Redis cluster."
-  default     = 1
-}
-
-## Redis TLS Enabled
-variable "redis_tls_enabled" {
+## Redis Apply Immediately
+variable "redis_apply_immediately" {
   type        = bool
-  description = "Determines whether TLS (Transport Layer Security) is enabled for Redis."
+  description = "Determines whether changes should be applied immediately for Redis."
+  default     = true
+}
+
+## Redis Automatic Failover Enabled
+variable "redis_automatic_failover_enabled" {
+  type        = bool
+  description = "Determines whether automatic failover is enabled for Redis."
   default     = false
 }
 
-## Create Redis ACL
-variable "redis_create_acl" {
-  type        = bool
-  default     = false
-  description = "Determines whether an ACL should be created for Redis."
+## Redis Family
+variable "redis_family" {
+  type        = string
+  description = "The family of the Redis engine."
+  default     = "redis6.x"
 }
 
-## Redis ACL Name
-variable "redis_acl_name" {
-  type    = string
-  default = "open-access"
+## Redis Rest Encryption Enabled
+variable "redis_at_rest_encryption_enabled" {
+  type        = bool
+  description = "Determines whether encryption at rest is enabled for Redis."
+  default     = false
+}
+
+## Redis Parameters
+variable "redis_parameters" {
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  description = "The list of Redis parameters."
+  default = [
+    {
+      name  = "notify-keyspace-events"
+      value = "lK"
+    }
+  ]
+}
+
+## Redis Transit Encryption Enabled
+variable "redis_transit_encryption_enabled" {
+  type        = bool
+  description = "Determines whether encryption in transit is enabled for Redis."
+  default     = false
 }
 
 ## Redis Maintenance Window
@@ -1337,74 +1367,11 @@ variable "redis_ingress_rule" {
   description = "The ingress rule for the Redis cluster."
 }
 
-## Redis Users
-variable "redis_users" {
-  type = map(object({
-    user_name     = string
-    access_string = string
-    passwords     = list(string)
-    tags          = map(string)
-  }))
-  description = "A map of Redis user configurations."
-  default = {
-    admin = {
-      user_name     = "seqera-admin-user"
-      access_string = "on ~* &* +@all"
-      passwords     = ["YouShouldPickAStrongSecurePassword987!"]
-      tags          = { User = "admin" }
-    }
-    readonly = {
-      user_name     = "seqera-readonly-user"
-      access_string = "on ~* &* -@all +@read"
-      passwords     = ["YouShouldPickAStrongSecurePassword123!"]
-      tags          = { User = "readonly" }
-    }
-  }
-}
-
-## Redis Parameter Group
-variable "redis_parameter_group_name" {
-  type        = string
-  description = "The name of the Redis parameter group."
-  default     = "redis-param-group"
-}
-
 ## Redis Parameter Group Description
 variable "redis_parameter_group_description" {
   type        = string
   description = "The description of the Redis parameter group."
-  default     = "Redis MemoryDB parameter group"
-}
-
-## Redis Parameter Group Family
-variable "redis_parameter_group_family" {
-  type        = string
-  description = "The family of the Redis parameter group."
-  default     = "memorydb_redis6"
-}
-
-## Redis Parameter Group Parameters
-variable "redis_parameter_group_parameters" {
-  type = list(object({
-    name  = string
-    value = string
-  }))
-  description = "A list of Redis parameter configurations."
-  default = [
-    {
-      name  = "activedefrag"
-      value = "yes"
-    }
-  ]
-}
-
-## Redis Parameter Group Tags
-variable "redis_parameter_group_tags" {
-  type        = map(string)
-  description = "Tags to be applied to the Redis parameter group."
-  default = {
-    ParameterGroup = "custom"
-  }
+  default     = "Redis Redis parameter group"
 }
 
 ## Redis Subnet Group
@@ -1425,5 +1392,5 @@ variable "redis_subnet_group_name" {
 variable "redis_subnet_group_description" {
   type        = string
   description = "The description of the Redis subnet group."
-  default     = "Seqera MemoryDB subnet group"
+  default     = "Seqera Redis subnet group"
 }
