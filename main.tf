@@ -248,7 +248,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
 
   depends_on = [
     module.eks,
-    module.module.aws_ebs_csi_driver_iam_policy
+    module.aws_ebs_csi_driver_iam_policy
   ]
 }
 
