@@ -2,12 +2,11 @@
 
 ## This Terraform code deploys infrastructure resources using the following modules:
 
-* vpc module: Creates a Virtual Private Cloud (VPC) with subnets, routing, and networking configurations.
-* eks module: Provisions an Amazon Elastic Kubernetes Service (EKS) cluster with managed node groups.
-* db\_sg module: Sets up a security group for access from the EKS cluster to the database.
-* redis\_sg module: Configures a security group for access from the EKS cluster to Redis.
-* db module: Deploys an Amazon RDS database instance.
-* memory\_db module: Creates a Redis MemoryDB cluster.
+* [VPC](https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest): Creates a Virtual Private Cloud (VPC) with subnets, routing, and networking configurations.
+* [EKS](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest): Provisions an Amazon Elastic Kubernetes Service (EKS) cluster with managed node groups.
+* [Security-Group](https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/latest): Sets up a security group for access from the EKS cluster to the database.
+* [RDS](https://registry.terraform.io/modules/terraform-aws-modules/rds/aws/latest): Deploys an Amazon RDS database instance.
+* [Elasticache-Redis](https://registry.terraform.io/modules/cloudposse/elasticache-redis/aws/latest): Creates a Redis MemoryDB cluster.
 
 ## Prerequisites
 Before running this Terraform code, ensure you have the following prerequisites in place:
@@ -136,7 +135,7 @@ This Terraform code is licensed under the Apache License
 | <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | 6.1.1 |
 | <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
-| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~> 19.0 |
+| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.16.0 |
 | <a name="module_redis"></a> [redis](#module\_redis) | cloudposse/elasticache-redis/aws | 0.52.0 |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |

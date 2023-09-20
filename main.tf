@@ -126,7 +126,7 @@ locals {
 # This module provisions an AWS EKS cluster using the terraform-aws-modules' EKS module.
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0" # Specifies the version of the EKS module to use.
+  version = "19.16.0" # Specifies the version of the EKS module to use.
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -247,7 +247,8 @@ resource "helm_release" "aws-ebs-csi-driver" {
   wait       = true
 
   depends_on = [
-    module.eks
+    module.eks,
+    module.module.aws_ebs_csi_driver_iam_policy
   ]
 }
 
@@ -917,6 +918,11 @@ resource "aws_efs_mount_target" "eks_efs_mount_target" {
   file_system_id  = aws_efs_file_system.eks_efs[0].id                                      # References the ID of the EFS created above.
   subnet_id       = element(module.vpc.private_subnets, count.index)                       # Specifies which private subnet the mount target will be in.
   security_groups = [module.efs_sg[0].security_group_id]                                   # Security group associated with the EFS mount target.
+
+  depends_on = [
+    module.vpc,
+    module.efs_sg
+  ]
 }
 
 # This resource creates an access point for the EFS. Access points are application-specific entry points into the EFS.
@@ -980,6 +986,8 @@ module "db_sg" {
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.db_ingress_rule_name]             # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
+
+  depends_on = [ module.vpc ]
 }
 
 # This module creates a security group specifically for the Redis cluster.
@@ -994,6 +1002,8 @@ module "redis_sg" {
 
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.redis_ingress_rule]               # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
+
+  depends_on = [ module.vpc ]
 }
 
 # This module creates a security group specifically for the AWS EFS CSI Driver.
@@ -1009,6 +1019,8 @@ module "efs_sg" {
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks                    # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name] # Specific set of ingress rules.
   egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks                    # Allows outgoing traffic to the private subnets of the VPC.
+
+  depends_on = [ module.vpc ]
 }
 
 # This resource generates a random password specifically for the database cluster.
@@ -1074,6 +1086,11 @@ module "db" {
   # Advanced DB configurations
   parameters = var.db_parameters # Database parameters to apply.
   options    = var.db_options    # Database options to apply.
+
+  depends_on = [ 
+    module.vpc,
+    module.db_sg 
+  ]
 }
 
 # Terraform Module to define a consistent naming convention by (namespace, stage, name, [attributes])
@@ -1172,6 +1189,7 @@ locals {
     local.aws_efs_csi_driver_policy
   )
 }
+
 # This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
