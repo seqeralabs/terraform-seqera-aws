@@ -184,7 +184,7 @@ resource "kubernetes_namespace_v1" "this" {
   count = var.create_seqera_namespace ? 1 : 0 || var.create_seqera_service_account ? 1 : 0
 
   metadata {
-    name = var.seqera_namespace_name
+    name = var.seqera_namespace
   }
 }
 
@@ -194,7 +194,7 @@ resource "kubernetes_service_account_v1" "this" {
 
   metadata {
     name      = var.seqera_service_account_name
-    namespace = var.seqera_namespace_name
+    namespace = var.seqera_namespace
     annotations = {
       "eks.amazonaws.com/role-arn" = module.seqera_irsa[0].iam_role_arn
     }
@@ -1282,7 +1282,7 @@ module "seqera_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["${var.seqera_namespace_name}:${var.seqera_service_account_name}"]
+      namespace_service_accounts = ["${var.seqera_namespace}:${var.seqera_service_account_name}"]
     }
   }
 
