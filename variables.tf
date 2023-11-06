@@ -1095,14 +1095,14 @@ variable "db_name" {
 }
 
 ## Database Seqera User Name
-variable "db_seqera_username" {
+variable "db_username" {
   type        = string
   default     = "seqera"
   description = "The username for the database."
 }
 
 ## Database Seqera User Password
-variable "db_seqera_password" {
+variable "db_password" {
   type        = string
   default     = ""
   description = "Password for the Seqera DB user."
