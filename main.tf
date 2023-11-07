@@ -1024,7 +1024,7 @@ module "efs_sg" {
 }
 
 # This resource generates a random password specifically for the database cluster.
-resource "random_password" "db_seqera_password" {
+resource "random_password" "db_password" {
   count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
 
   length           = 16                     # The length of the password will be 16 characters.
@@ -1050,10 +1050,10 @@ module "db" {
 
   # Database access configuration
   db_name  = var.db_name            # The name of the database to be created.
-  username = var.db_seqera_username # Master username for the DB.
+  username = var.db_username # Master username for the DB.
   port     = var.db_port            # The port on which the DB accepts connections.
   # If a DB password is provided in the variable, use that. Otherwise, use the randomly generated password.
-  password = var.db_seqera_password != "" ? var.db_seqera_password : random_password.db_seqera_password[0].result
+  password = var.db_password != "" ? var.db_password : random_password.db_password[0].result
 
   iam_database_authentication_enabled = var.db_iam_database_authentication_enabled # Enable IAM authentication for the DB.
 
