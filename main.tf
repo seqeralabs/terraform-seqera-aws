@@ -1,27 +1,15 @@
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "aws"
-    # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws_profile, "--region", var.region]
-  }
+  token                  = data.aws_eks_cluster_auth.this.token
 }
 
 provider "kubectl" {
   apply_retry_count      = 5
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
   load_config_file       = false
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "aws"
-    # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws_profile, "--region", var.region]
-  }
 }
 
 provider "helm" {
@@ -29,17 +17,15 @@ provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-
-    exec {
-      api_version = "client.authentication.k8s.io/v1beta1"
-      command     = "aws"
-      # This requires the awscli to be installed locally where Terraform is executed
-      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws_profile, "--region", var.region]
-    }
+    token                  = data.aws_eks_cluster_auth.this.token
   }
 }
 
 data "aws_caller_identity" "current" {}
+
+data "aws_eks_cluster_auth" "this" {
+  name = module.eks.cluster_name
+}
 
 # This module provisions a VPC (Virtual Private Cloud) in AWS using the terraform-aws-modules' VPC module.
 # VPCs provide isolation for AWS resources and allow one to define a network with their own IP address range,
@@ -126,7 +112,7 @@ locals {
 # This module provisions an AWS EKS cluster using the terraform-aws-modules' EKS module.
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.16.0" # Specifies the version of the EKS module to use.
+  version = "19.19.0" # Specifies the version of the EKS module to use.
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -987,7 +973,7 @@ module "db_sg" {
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.db_ingress_rule_name]             # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
 
-  depends_on = [ module.vpc ]
+  depends_on = [module.vpc]
 }
 
 # This module creates a security group specifically for the Redis cluster.
@@ -1003,7 +989,7 @@ module "redis_sg" {
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.redis_ingress_rule]               # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
 
-  depends_on = [ module.vpc ]
+  depends_on = [module.vpc]
 }
 
 # This module creates a security group specifically for the AWS EFS CSI Driver.
@@ -1020,7 +1006,7 @@ module "efs_sg" {
   ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name] # Specific set of ingress rules.
   egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks                    # Allows outgoing traffic to the private subnets of the VPC.
 
-  depends_on = [ module.vpc ]
+  depends_on = [module.vpc]
 }
 
 # This resource generates a random password specifically for the database cluster.
@@ -1049,9 +1035,9 @@ module "db" {
   skip_final_snapshot = var.db_skip_final_snapshot # Determines if a final DB snapshot is created before the DB instance is deleted.
 
   # Database access configuration
-  db_name  = var.db_name            # The name of the database to be created.
+  db_name  = var.db_name     # The name of the database to be created.
   username = var.db_username # Master username for the DB.
-  port     = var.db_port            # The port on which the DB accepts connections.
+  port     = var.db_port     # The port on which the DB accepts connections.
   # If a DB password is provided in the variable, use that. Otherwise, use the randomly generated password.
   password = var.db_password != "" ? var.db_password : random_password.db_password[0].result
 
@@ -1087,9 +1073,9 @@ module "db" {
   parameters = var.db_parameters # Database parameters to apply.
   options    = var.db_options    # Database options to apply.
 
-  depends_on = [ 
+  depends_on = [
     module.vpc,
-    module.db_sg 
+    module.db_sg
   ]
 }
 
