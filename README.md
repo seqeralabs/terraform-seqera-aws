@@ -107,7 +107,7 @@ This Terraform code is licensed under the Apache License
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.4 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | 5.0.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | 2.11.0 |
 | <a name="requirement_kubectl"></a> [kubectl](#requirement\_kubectl) | 1.14.0 |
@@ -135,7 +135,7 @@ This Terraform code is licensed under the Apache License
 | <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | 6.1.1 |
 | <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
-| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.16.0 |
+| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.19.0 |
 | <a name="module_redis"></a> [redis](#module\_redis) | cloudposse/elasticache-redis/aws | 0.52.0 |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
@@ -161,6 +161,7 @@ This Terraform code is licensed under the Apache License
 | [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
 | [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
+| [aws_eks_cluster_auth.this](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/eks_cluster_auth) | data source |
 
 ## Inputs
 
