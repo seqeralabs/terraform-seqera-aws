@@ -1091,7 +1091,7 @@ variable "db_skip_final_snapshot" {
 ## Database Name
 variable "db_name" {
   type        = string
-  default     = "seqera"
+  default     = "tower"
   description = "The name of the database."
 }
 
