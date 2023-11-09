@@ -591,6 +591,7 @@ variable "seqera_platform_service_account_iam_policy" {
           "Effect": "Allow",
           "Action": [
               "ssm:GetParameters",
+              "ses:SendRawEmail",
               "iam:CreateInstanceProfile",
               "iam:DeleteInstanceProfile",
               "iam:GetRole",
