@@ -1101,11 +1101,32 @@ variable "db_username" {
   description = "The username for the database."
 }
 
+## Database Master User Name
+variable "db_master_username" {
+  type        = string
+  default     = "root"
+  description = "The master username for the database."
+}
+
+## Database Master User Password
+variable "db_master_password" {
+  type        = string
+  default     = ""
+  description = "The master password for the database."
+}
+
 ## Database Seqera User Password
 variable "db_password" {
   type        = string
   default     = ""
   description = "Password for the Seqera DB user."
+}
+
+## Create Database Password Secret
+variable "create_db_password_secret" {
+  type        = bool
+  default     = true
+  description = "Determines whether a secret should be created for the database password."
 }
 
 ## Database Port

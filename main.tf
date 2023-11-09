@@ -191,6 +191,78 @@ resource "kubernetes_service_account_v1" "this" {
   depends_on = [kubernetes_namespace_v1.this] # Ensures the namespace is created before the service account.
 }
 
+# DB Secret
+resource "kubernetes_secret_v1" "db_password" {
+  count = var.create_db_cluster && var.create_db_password_secret ? 1 : 0
+  metadata {
+    name      = "database-password"
+    namespace = var.seqera_namespace_name
+  }
+
+  data = {
+    password        = var.db_password != "" ? var.db_password : random_password.db_password[0].result
+    master_password = var.db_master_password != "" ? var.db_master_password : random_password.db_master_password[0].result
+  }
+
+  type = "Opaque"
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+locals {
+  db_master_password = var.db_master_password != "" ? var.db_master_password : random_password.db_master_password[0].result
+  db_password        = var.db_password != "" ? var.db_password : random_password.db_password[0].result
+}
+
+# This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
+resource "kubernetes_job_v1" "seqera_schema_job" {
+  count = var.create_db_cluster ? 1 : 0
+  metadata {
+    name      = "seqera-schema-job"
+    namespace = var.seqera_namespace_name
+  }
+
+  spec {
+    backoff_limit = 1
+    template {
+      metadata {
+        name = "seqera-schema-job"
+      }
+
+      spec {
+        container {
+          name    = "seqera-schema-job"
+          image   = "mysql:8.0.35-debian"
+          command = ["mysql"]
+          args = [
+            "--host=${module.db[0].db_instance_address}",
+            "--user=${var.db_master_username}",
+            "--password=${local.db_master_password}",
+            "-e", <<-EOT
+              ALTER DATABASE ${var.db_name} CHARACTER SET utf8 COLLATE utf8_bin;
+              CREATE USER IF NOT EXISTS ${var.db_username} IDENTIFIED BY "${local.db_password}";
+              GRANT ALL PRIVILEGES ON ${var.db_username}.* TO ${var.db_username}@'%';
+            EOT
+          ]
+        }
+
+        restart_policy = "Never"
+
+        dns_config {
+          searches = ["kube-dns.kube-system.svc.cluster.local"]
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    module.eks,
+    module.db
+  ]
+}
+
 # A Helm release resource for deploying the AWS cluster autoscaler using the Helm package manager.
 resource "helm_release" "aws_cluster_autoscaler" {
   count = var.enable_aws_cluster_autoscaler ? 1 : 0
@@ -1013,6 +1085,14 @@ module "efs_sg" {
 resource "random_password" "db_password" {
   count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
 
+  length  = 16    # The length of the password will be 16 characters.
+  special = false # Indicates that special characters can be used in the password.
+}
+
+# This resource generates a random master password specifically for the database cluster.
+resource "random_password" "db_master_password" {
+  count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
+
   length           = 16                     # The length of the password will be 16 characters.
   special          = true                   # Indicates that special characters can be used in the password.
   override_special = "!#$%&*()-_=+[]{}<>:?" # Specifies which special characters can be used in the password.
@@ -1035,11 +1115,11 @@ module "db" {
   skip_final_snapshot = var.db_skip_final_snapshot # Determines if a final DB snapshot is created before the DB instance is deleted.
 
   # Database access configuration
-  db_name  = var.db_name     # The name of the database to be created.
-  username = var.db_username # Master username for the DB.
-  port     = var.db_port     # The port on which the DB accepts connections.
+  db_name  = var.db_name            # The name of the database to be created.
+  username = var.db_master_username # Master username for the DB.
+  port     = var.db_port            # The port on which the DB accepts connections.
   # If a DB password is provided in the variable, use that. Otherwise, use the randomly generated password.
-  password = var.db_password != "" ? var.db_password : random_password.db_password[0].result
+  password = var.db_master_password != "" ? var.db_password : random_password.db_master_password[0].result
 
   iam_database_authentication_enabled = var.db_iam_database_authentication_enabled # Enable IAM authentication for the DB.
 

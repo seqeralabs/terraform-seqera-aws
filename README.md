@@ -156,9 +156,12 @@ This Terraform code is licensed under the Apache License
 | [helm_release.aws-load-balancer-controller](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
 | [helm_release.aws_cluster_autoscaler](https://registry.terraform.io/providers/hashicorp/helm/2.11.0/docs/resources/release) | resource |
 | [kubectl_manifest.aws_loadbalancer_controller_crd](https://registry.terraform.io/providers/gavinbunney/kubectl/1.14.0/docs/resources/manifest) | resource |
+| [kubernetes_job_v1.seqera_schema_job](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/job_v1) | resource |
 | [kubernetes_namespace_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/namespace_v1) | resource |
+| [kubernetes_secret_v1.db_password](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/secret_v1) | resource |
 | [kubernetes_service_account_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/service_account_v1) | resource |
 | [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
+| [random_password.db_master_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
 | [aws_eks_cluster_auth.this](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/eks_cluster_auth) | data source |
@@ -202,6 +205,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_create_database_subnet_group"></a> [create\_database\_subnet\_group](#input\_create\_database\_subnet\_group) | Determines whether a database subnet group should be created. | `bool` | `true` | no |
 | <a name="input_create_database_subnet_route_table"></a> [create\_database\_subnet\_route\_table](#input\_create\_database\_subnet\_route\_table) | Determines whether a subnet route table should be created for the database subnets. | `bool` | `true` | no |
 | <a name="input_create_db_cluster"></a> [create\_db\_cluster](#input\_create\_db\_cluster) | Determines whether the database cluster should be created. | `bool` | `true` | no |
+| <a name="input_create_db_password_secret"></a> [create\_db\_password\_secret](#input\_create\_db\_password\_secret) | Determines whether a secret should be created for the database password. | `bool` | `true` | no |
 | <a name="input_create_redis_cluster"></a> [create\_redis\_cluster](#input\_create\_redis\_cluster) | Determines whether to create a Redis cluster. | `bool` | `true` | no |
 | <a name="input_create_seqera_namespace"></a> [create\_seqera\_namespace](#input\_create\_seqera\_namespace) | Determines whether to create the Seqera namespace. | `bool` | `true` | no |
 | <a name="input_create_seqera_service_account"></a> [create\_seqera\_service\_account](#input\_create\_seqera\_service\_account) | Determines whether to create the Seqera service account. | `bool` | `true` | no |
@@ -218,6 +222,8 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_maintenance_window"></a> [db\_maintenance\_window](#input\_db\_maintenance\_window) | The maintenance window for the database. | `string` | `"Mon:00:00-Mon:03:00"` | no |
 | <a name="input_db_major_engine_version"></a> [db\_major\_engine\_version](#input\_db\_major\_engine\_version) | The major version of the database engine. | `string` | `"5.7"` | no |
 | <a name="input_db_manage_master_user_password"></a> [db\_manage\_master\_user\_password](#input\_db\_manage\_master\_user\_password) | Determines whether the master user password should be managed. | `bool` | `false` | no |
+| <a name="input_db_master_password"></a> [db\_master\_password](#input\_db\_master\_password) | The master password for the database. | `string` | `""` | no |
+| <a name="input_db_master_username"></a> [db\_master\_username](#input\_db\_master\_username) | The master username for the database. | `string` | `"root"` | no |
 | <a name="input_db_monitoring_interval"></a> [db\_monitoring\_interval](#input\_db\_monitoring\_interval) | The monitoring interval for the database. | `string` | `"0"` | no |
 | <a name="input_db_monitoring_role_name"></a> [db\_monitoring\_role\_name](#input\_db\_monitoring\_role\_name) | The name of the IAM role used for database monitoring. | `string` | `"SeqeraRDSMonitoringRole"` | no |
 | <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"seqera"` | no |
