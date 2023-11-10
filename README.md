@@ -18,7 +18,7 @@ Terraform CLI installed on your local machine.
 Follow the steps below to deploy the infrastructure:
 
 Example:
-```
+```hcl
 ## Module
 module "terraform-seqera-module" {
   source  = "github.com/seqeralabs/terraform-seqera-module"
@@ -226,7 +226,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_master_username"></a> [db\_master\_username](#input\_db\_master\_username) | The master username for the database. | `string` | `"root"` | no |
 | <a name="input_db_monitoring_interval"></a> [db\_monitoring\_interval](#input\_db\_monitoring\_interval) | The monitoring interval for the database. | `string` | `"0"` | no |
 | <a name="input_db_monitoring_role_name"></a> [db\_monitoring\_role\_name](#input\_db\_monitoring\_role\_name) | The name of the IAM role used for database monitoring. | `string` | `"SeqeraRDSMonitoringRole"` | no |
-| <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"seqera"` | no |
+| <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"tower"` | no |
 | <a name="input_db_options"></a> [db\_options](#input\_db\_options) | The list of database options. | <pre>list(object({<br>    option_name = string<br>    option_settings = list(object({<br>      name  = string<br>      value = string<br>    }))<br>  }))</pre> | <pre>[<br>  {<br>    "option_name": "MARIADB_AUDIT_PLUGIN",<br>    "option_settings": [<br>      {<br>        "name": "SERVER_AUDIT_EVENTS",<br>        "value": "CONNECT"<br>      },<br>      {<br>        "name": "SERVER_AUDIT_FILE_ROTATIONS",<br>        "value": "37"<br>      }<br>    ]<br>  }<br>]</pre> | no |
 | <a name="input_db_parameters"></a> [db\_parameters](#input\_db\_parameters) | The list of database parameters. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "character_set_client",<br>    "value": "utf8mb4"<br>  },<br>  {<br>    "name": "character_set_server",<br>    "value": "utf8mb4"<br>  }<br>]</pre> | no |
 | <a name="input_db_password"></a> [db\_password](#input\_db\_password) | Password for the Seqera DB user. | `string` | `""` | no |
