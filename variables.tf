@@ -1130,6 +1130,27 @@ variable "create_db_password_secret" {
   description = "Determines whether a secret should be created for the database password."
 }
 
+## Database Password Secret Name
+variable "db_password_secret_name" {
+  type        = string
+  default     = "seqera-db-password"
+  description = "The name of the secret for the database password."
+}
+
+## Database setup job name
+variable "db_setup_job_name" {
+  type        = string
+  default     = "seqera-db-setup-job"
+  description = "The name of the database setup job."
+}
+
+## Database setup job image
+variable "db_setup_job_image" {
+  type        = string
+  default     = "mysql:8.0.35-debian"
+  description = "The image for the database setup job."
+}
+
 ## Database Port
 variable "db_port" {
   type        = string

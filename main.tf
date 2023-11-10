@@ -195,7 +195,7 @@ resource "kubernetes_service_account_v1" "this" {
 resource "kubernetes_secret_v1" "db_password" {
   count = var.create_db_cluster && var.create_db_password_secret ? 1 : 0
   metadata {
-    name      = "database-password"
+    name      = var.db_password_secret_name
     namespace = var.seqera_namespace_name
   }
 
@@ -211,6 +211,7 @@ resource "kubernetes_secret_v1" "db_password" {
   ]
 }
 
+## This local is used to control the password values passed to the db setup job.
 locals {
   db_master_password = var.db_master_password != "" ? var.db_master_password : random_password.db_master_password[0].result
   db_password        = var.db_password != "" ? var.db_password : random_password.db_password[0].result
@@ -220,7 +221,7 @@ locals {
 resource "kubernetes_job_v1" "seqera_schema_job" {
   count = var.create_db_cluster ? 1 : 0
   metadata {
-    name      = "seqera-schema-job"
+    name      = var.db_setup_job_name
     namespace = var.seqera_namespace_name
   }
 
@@ -228,13 +229,13 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
     backoff_limit = 1
     template {
       metadata {
-        name = "seqera-schema-job"
+        name = var.db_setup_job_name
       }
 
       spec {
         container {
-          name    = "seqera-schema-job"
-          image   = "mysql:8.0.35-debian"
+          name    = var.db_setup_job_name
+          image   = var.db_setup_job_image
           command = ["mysql"]
           args = [
             "--host=${module.db[0].db_instance_address}",
