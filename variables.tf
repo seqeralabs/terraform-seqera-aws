@@ -1089,35 +1089,35 @@ variable "db_skip_final_snapshot" {
 }
 
 ## Database Name
-variable "db_name" {
+variable "db_app_schema_name" {
   type        = string
   default     = "tower"
   description = "The name of the database."
 }
 
 ## Database Seqera User Name
-variable "db_username" {
+variable "db_app_username" {
   type        = string
   default     = "seqera"
   description = "The username for the database."
 }
 
 ## Database Master User Name
-variable "db_master_username" {
+variable "db_root_username" {
   type        = string
   default     = "root"
   description = "The master username for the database."
 }
 
 ## Database Master User Password
-variable "db_master_password" {
+variable "db_root_password" {
   type        = string
   default     = ""
   description = "The master password for the database."
 }
 
 ## Database Seqera User Password
-variable "db_password" {
+variable "db_app_password" {
   type        = string
   default     = ""
   description = "Password for the Seqera DB user."
