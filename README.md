@@ -158,11 +158,11 @@ This Terraform code is licensed under the Apache License
 | [kubectl_manifest.aws_loadbalancer_controller_crd](https://registry.terraform.io/providers/gavinbunney/kubectl/1.14.0/docs/resources/manifest) | resource |
 | [kubernetes_job_v1.seqera_schema_job](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/job_v1) | resource |
 | [kubernetes_namespace_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/namespace_v1) | resource |
-| [kubernetes_secret_v1.db_password](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/secret_v1) | resource |
+| [kubernetes_secret_v1.db_app_password](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/secret_v1) | resource |
 | [kubernetes_service_account_v1.this](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/service_account_v1) | resource |
 | [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
-| [random_password.db_master_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
-| [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
+| [random_password.db_app_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
+| [random_password.db_root_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
 | [aws_eks_cluster_auth.this](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/eks_cluster_auth) | data source |
 
@@ -211,6 +211,9 @@ This Terraform code is licensed under the Apache License
 | <a name="input_create_seqera_service_account"></a> [create\_seqera\_service\_account](#input\_create\_seqera\_service\_account) | Determines whether to create the Seqera service account. | `bool` | `true` | no |
 | <a name="input_database_identifier"></a> [database\_identifier](#input\_database\_identifier) | The identifier for the database. | `string` | `"seqera-db"` | no |
 | <a name="input_db_allocated_storage"></a> [db\_allocated\_storage](#input\_db\_allocated\_storage) | The allocated storage size for the database. | `number` | `10` | no |
+| <a name="input_db_app_password"></a> [db\_app\_password](#input\_db\_app\_password) | Password for the Seqera DB user. | `string` | `""` | no |
+| <a name="input_db_app_schema_name"></a> [db\_app\_schema\_name](#input\_db\_app\_schema\_name) | The name of the database. | `string` | `"tower"` | no |
+| <a name="input_db_app_username"></a> [db\_app\_username](#input\_db\_app\_username) | The username for the database. | `string` | `"seqera"` | no |
 | <a name="input_db_backup_window"></a> [db\_backup\_window](#input\_db\_backup\_window) | The backup window for the database. | `string` | `"03:00-06:00"` | no |
 | <a name="input_db_create_monitoring_role"></a> [db\_create\_monitoring\_role](#input\_db\_create\_monitoring\_role) | Determines whether the monitoring role should be created. | `bool` | `false` | no |
 | <a name="input_db_deletion_protection"></a> [db\_deletion\_protection](#input\_db\_deletion\_protection) | Determines whether deletion protection is enabled for the database. | `bool` | `false` | no |
@@ -222,21 +225,18 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_maintenance_window"></a> [db\_maintenance\_window](#input\_db\_maintenance\_window) | The maintenance window for the database. | `string` | `"Mon:00:00-Mon:03:00"` | no |
 | <a name="input_db_major_engine_version"></a> [db\_major\_engine\_version](#input\_db\_major\_engine\_version) | The major version of the database engine. | `string` | `"5.7"` | no |
 | <a name="input_db_manage_master_user_password"></a> [db\_manage\_master\_user\_password](#input\_db\_manage\_master\_user\_password) | Determines whether the master user password should be managed. | `bool` | `false` | no |
-| <a name="input_db_master_password"></a> [db\_master\_password](#input\_db\_master\_password) | The master password for the database. | `string` | `""` | no |
-| <a name="input_db_master_username"></a> [db\_master\_username](#input\_db\_master\_username) | The master username for the database. | `string` | `"root"` | no |
 | <a name="input_db_monitoring_interval"></a> [db\_monitoring\_interval](#input\_db\_monitoring\_interval) | The monitoring interval for the database. | `string` | `"0"` | no |
 | <a name="input_db_monitoring_role_name"></a> [db\_monitoring\_role\_name](#input\_db\_monitoring\_role\_name) | The name of the IAM role used for database monitoring. | `string` | `"SeqeraRDSMonitoringRole"` | no |
-| <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database. | `string` | `"tower"` | no |
 | <a name="input_db_options"></a> [db\_options](#input\_db\_options) | The list of database options. | <pre>list(object({<br>    option_name = string<br>    option_settings = list(object({<br>      name  = string<br>      value = string<br>    }))<br>  }))</pre> | <pre>[<br>  {<br>    "option_name": "MARIADB_AUDIT_PLUGIN",<br>    "option_settings": [<br>      {<br>        "name": "SERVER_AUDIT_EVENTS",<br>        "value": "CONNECT"<br>      },<br>      {<br>        "name": "SERVER_AUDIT_FILE_ROTATIONS",<br>        "value": "37"<br>      }<br>    ]<br>  }<br>]</pre> | no |
 | <a name="input_db_parameters"></a> [db\_parameters](#input\_db\_parameters) | The list of database parameters. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "character_set_client",<br>    "value": "utf8mb4"<br>  },<br>  {<br>    "name": "character_set_server",<br>    "value": "utf8mb4"<br>  }<br>]</pre> | no |
-| <a name="input_db_password"></a> [db\_password](#input\_db\_password) | Password for the Seqera DB user. | `string` | `""` | no |
 | <a name="input_db_password_secret_name"></a> [db\_password\_secret\_name](#input\_db\_password\_secret\_name) | The name of the secret for the database password. | `string` | `"seqera-db-password"` | no |
 | <a name="input_db_port"></a> [db\_port](#input\_db\_port) | The port for the database. | `string` | `"3306"` | no |
+| <a name="input_db_root_password"></a> [db\_root\_password](#input\_db\_root\_password) | The master password for the database. | `string` | `""` | no |
+| <a name="input_db_root_username"></a> [db\_root\_username](#input\_db\_root\_username) | The master username for the database. | `string` | `"root"` | no |
 | <a name="input_db_security_group_name"></a> [db\_security\_group\_name](#input\_db\_security\_group\_name) | The name of the security group for the database. | `string` | `"seqera_db_security_group"` | no |
 | <a name="input_db_setup_job_image"></a> [db\_setup\_job\_image](#input\_db\_setup\_job\_image) | The image for the database setup job. | `string` | `"mysql:8.0.35-debian"` | no |
 | <a name="input_db_setup_job_name"></a> [db\_setup\_job\_name](#input\_db\_setup\_job\_name) | The name of the database setup job. | `string` | `"seqera-db-setup-job"` | no |
 | <a name="input_db_skip_final_snapshot"></a> [db\_skip\_final\_snapshot](#input\_db\_skip\_final\_snapshot) | Determines whether a final snapshot should be created when the database is deleted. | `bool` | `true` | no |
-| <a name="input_db_username"></a> [db\_username](#input\_db\_username) | The username for the database. | `string` | `"seqera"` | no |
 | <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to the provisioned resources. | `map(string)` | <pre>{<br>  "ManagedBy": "Terraform",<br>  "Product": "Seqera Platform"<br>}</pre> | no |
 | <a name="input_eks_aws_auth_roles"></a> [eks\_aws\_auth\_roles](#input\_eks\_aws\_auth\_roles) | List of roles ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_aws_auth_users"></a> [eks\_aws\_auth\_users](#input\_eks\_aws\_auth\_users) | List of users ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
