@@ -73,16 +73,16 @@ output "seqera_irsa_role_name" {
 1. Clone this repository to your local machine.
 2. Navigate to the project directory.
 3. Initialize the Terraform configuration by running the following command:
-```
+```bash
 terraform init
 ```
 5. Review the variables in the variables.tf file and update them as per your requirements.
 6. Run the Terraform plan command to see the execution plan:
-```
+```bash
 terraform plan
 ```
 If the plan looks good, apply the changes by running the following command:
-```
+```bash
 terraform apply
 ```
 7. Confirm the changes by typing yes when prompted.
@@ -95,7 +95,7 @@ The following outputs will be displayed after successful deployment:
 ### Cleanup
 
 To destroy the provisioned infrastructure and clean up resources, run the following command:
-```
+```bash
 terraform destroy
 ```
 Confirm the action by typing yes when prompted.
