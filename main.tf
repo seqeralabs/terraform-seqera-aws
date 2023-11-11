@@ -258,6 +258,13 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
     }
   }
 
+  wait_for_completion = true
+
+  timeouts {
+    create = "10m"
+    update = "5"
+  }
+
   depends_on = [
     module.eks,
     module.db
