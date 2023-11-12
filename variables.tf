@@ -17,7 +17,7 @@ variable "default_tags" {
   type = map(string)
   default = {
     ManagedBy = "Terraform"
-    Product   = "Seqera Platform"
+    Product   = "SeqeraPlatform"
   }
   description = "Default tags to be applied to the provisioned resources."
 }
