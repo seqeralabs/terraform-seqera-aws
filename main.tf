@@ -237,8 +237,8 @@ resource "kubernetes_config_map_v1" "tower_app_configmap" {
   }
 
   data = {
-    TOWER_DB_URL    = module.db[0].db_instance_address
-    TOWER_REDIS_URL = module.redis[0].endpoint
+    TOWER_DB_URL    = "jdbc:mysql://${module.db[0].db_instance_address}:3306/${var.db_app_schema_name}?&usePipelineAuth=false&useBatchMultiSend=false"
+    TOWER_REDIS_URL = "redis://${module.redis[0].endpoint}:6379"
   }
 
   depends_on = [
