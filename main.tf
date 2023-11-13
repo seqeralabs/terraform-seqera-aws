@@ -262,7 +262,7 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
 
   timeouts {
     create = "10m"
-    update = "5"
+    update = "5m"
   }
 
   depends_on = [
