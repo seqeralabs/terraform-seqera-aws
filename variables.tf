@@ -1149,8 +1149,22 @@ variable "create_db_password_secret" {
 ## Database Password Secret Name
 variable "db_password_secret_name" {
   type        = string
-  default     = "seqera-db-password"
+  default     = "tower-terraform-secrets"
   description = "The name of the secret for the database password."
+}
+
+## Create Tower App configMap
+variable "create_tower_app_configmap" {
+  type        = bool
+  default     = true
+  description = "Determines whether a configMap should be created for the Tower app."
+}
+
+## Tower App congigMap name
+variable "tower_app_configmap_name" {
+  type        = string
+  default     = "tower-terraform-cfg"
+  description = "The name of the configMap for the Tower app."
 }
 
 ## Database setup job name

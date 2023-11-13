@@ -217,13 +217,33 @@ resource "kubernetes_secret_v1" "db_app_password" {
   }
 
   data = {
-    password        = var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result
-    master_password = var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result
+    TOWER_DB_PASSWORD      = var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result
+    TOWER_DB_ROOT_PASSWORD = var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result
   }
 
   type = "Opaque"
 
   depends_on = [
+    module.eks
+  ]
+}
+
+# Config Map
+resource "kubernetes_config_map_v1" "tower_app_configmap" {
+  count = var.create_db_cluster && var.create_redis_cluster && var.create_tower_app_configmap ? 1 : 0
+  metadata {
+    name      = var.tower_app_configmap_name
+    namespace = var.seqera_namespace_name
+  }
+
+  data = {
+    TOWER_DB_URL    = module.db[0].db_instance_address
+    TOWER_REDIS_URL = module.redis[0].endpoint
+  }
+
+  depends_on = [
+    module.db,
+    module.redis,
     module.eks
   ]
 }
