@@ -1,0 +1,6 @@
+TERRAFORM-SEQERA-AWS CHANGE-LOG
+===============================
+0.6.0 - 13 Nov 2023
+- Fix DB and Redis urls [0982660d]
+
+
