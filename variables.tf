@@ -1370,6 +1370,13 @@ variable "redis_apply_immediately" {
   default     = true
 }
 
+## Redis Port
+variable "redis_port" {
+  type        = string
+  description = "The port for Redis."
+  default     = "6379"
+}
+
 ## Redis Automatic Failover Enabled
 variable "redis_automatic_failover_enabled" {
   type        = bool

@@ -237,8 +237,8 @@ resource "kubernetes_config_map_v1" "tower_app_configmap" {
   }
 
   data = {
-    TOWER_DB_URL    = "jdbc:mysql://${module.db[0].db_instance_address}:3306/${var.db_app_schema_name}?&usePipelineAuth=false&useBatchMultiSend=false"
-    TOWER_REDIS_URL = "redis://${module.redis[0].endpoint}:6379"
+    TOWER_DB_URL    = "jdbc:mysql://${module.db[0].db_instance_address}:${var.db_port}/${var.db_app_schema_name}?&usePipelineAuth=false&useBatchMultiSend=false"
+    TOWER_REDIS_URL = "redis://${module.redis[0].endpoint}:${var.redis_port}"
   }
 
   depends_on = [
@@ -1246,6 +1246,7 @@ module "redis" {
   associated_security_group_ids = [module.redis_sg[0].security_group_id]
   elasticache_subnet_group_name = module.vpc.elasticache_subnet_group_name
   create_security_group         = false
+  port                          = var.redis_port
   subnets                       = module.vpc.elasticache_subnets
   cluster_size                  = var.redis_cluster_size
   instance_type                 = var.redis_instance_type
