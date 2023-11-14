@@ -273,6 +273,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_redis_maintenance_window"></a> [redis\_maintenance\_window](#input\_redis\_maintenance\_window) | The maintenance window for the Redis cluster. | `string` | `"sun:23:00-mon:01:30"` | no |
 | <a name="input_redis_parameter_group_description"></a> [redis\_parameter\_group\_description](#input\_redis\_parameter\_group\_description) | The description of the Redis parameter group. | `string` | `"Redis Redis parameter group"` | no |
 | <a name="input_redis_parameters"></a> [redis\_parameters](#input\_redis\_parameters) | The list of Redis parameters. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | <pre>[<br>  {<br>    "name": "notify-keyspace-events",<br>    "value": "lK"<br>  }<br>]</pre> | no |
+| <a name="input_redis_port"></a> [redis\_port](#input\_redis\_port) | The port for Redis. | `string` | `"6379"` | no |
 | <a name="input_redis_security_group_name"></a> [redis\_security\_group\_name](#input\_redis\_security\_group\_name) | The name of the security group for Redis. | `string` | `"seqera_redis_security_group"` | no |
 | <a name="input_redis_snapshot_retention_limit"></a> [redis\_snapshot\_retention\_limit](#input\_redis\_snapshot\_retention\_limit) | The number of days to retain Redis snapshots. | `number` | `7` | no |
 | <a name="input_redis_snapshot_window"></a> [redis\_snapshot\_window](#input\_redis\_snapshot\_window) | The window during which Redis snapshots are taken. | `string` | `"05:00-09:00"` | no |
