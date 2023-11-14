@@ -1126,6 +1126,22 @@ module "efs_sg" {
   depends_on = [module.vpc]
 }
 
+module "ec2_sg" {
+  count   = var.create_ec2_instance || var.create_ec2_spot_instance ? 1 : 0 # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  version = "5.1.0"                                                         # Specifies the version of the module to use.
+  source  = "terraform-aws-modules/security-group/aws"                      # Using a community Terraform AWS security group module.
+
+  name        = var.ec2_instance_security_group_name                 # The name of the security group, sourced from a variable.
+  description = "Security group for access from seqera EC2 instance" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
+  vpc_id      = module.vpc.vpc_id                                    # The VPC ID where this security group will be created, sourced from the 'vpc' module.
+
+  ingress_cidr_blocks = var.ec2_instance_sg_ingress_cidr_blocks           # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = var.ec2_instan_security_group_ingress_rules_names # Specific set of ingress rules.
+  egress_cidr_blocks  = var.ec2_instance_sg_egress_cidr_blocks            # Allows outgoing traffic to the private subnets of the VPC.
+
+  depends_on = [module.vpc]
+}
+
 # This resource generates a random password specifically for the database cluster.
 resource "random_password" "db_app_password" {
   count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
@@ -1268,6 +1284,8 @@ locals {
   aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_ebs_csi_driver_iam_policy_name          = "${var.aws_ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
+  ec2_instance_profile_iam_policy_name        = "${var.ec2_instance_profile_iam_policy_name}-${var.ec2_instance_name}-${var.region}"
+
 
   # The next set of local variables are conditional policy mappings.
   # If the respective feature is enabled (e.g., `var.enable_aws_loadbalancer_controller` is true), 
@@ -1376,6 +1394,19 @@ module "aws_ebs_csi_driver_iam_policy" {
   tags = var.default_tags # Assigning default tags.
 }
 
+module "ec2_instance_profile_iam_policy" {
+  source      = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version     = "5.30.0"                                                                                                                                                        # Specifies the version of the module to use.
+  count       = var.create_ec2_instance && var.create_ec2_instance_iam_instance_profile || var.create_ec2_spot_instance && var.create_ec2_instance_iam_instance_profile ? 1 : 0 # Conditional creation based on the variable.
+  name        = local.ec2_instance_profile_iam_policy_name
+  path        = "/"
+  description = "This is the policy associated with the EC2 Instance Role."
+
+  policy = var.ec2_instance_profile_iam_policy # Policy content or document.
+
+  tags = var.default_tags # Assigning default tags.
+}
+
 # This module creates an IAM role for service accounts for Seqera.
 # Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
@@ -1407,4 +1438,50 @@ module "seqera_irsa" {
   tags = {
     Name = local.seqera_irsa_role_name # Assigning the role name as a tag.
   }
+}
+
+## Data to get the Ubunutu AMI ID
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["679593333241"]
+
+  filter {
+    name   = "name"
+    values = ["ubuntu-minimal/images/hvm-ssd/ubuntu-focal-20.04-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+## EC2 Instance Module
+module "ec2_instance" {
+  source               = "terraform-aws-modules/ec2-instance/aws"
+  version              = "5.5.0"
+  create               = var.create_ec2_instance
+  create_spot_instance = var.create_ec2_spot_instance
+
+  name = var.ec2_instance_name
+
+  instance_type               = var.ec2_instance_type
+  key_name                    = var.ec2_instance_key_name
+  monitoring                  = var.enable_ec2_instance_monitoring
+  vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
+  subnet_id                   = module.vpc.private_subnets[0]
+  ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.ubuntu.id
+  create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
+  get_password_data           = var.get_ec2_instance_password_data
+  iam_role_description        = var.ec2_instance_iam_role_description
+  iam_role_name               = var.ec2_instance_iam_role_name
+  iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "policy" = module.ec2_instance_profile_iam_policy[0].arn } : {}
+  iam_role_tags               = var.default_tags
+
+  # Default tags for VPC resources.
+  tags = var.default_tags
+
+  depends_on = [
+    module.vpc
+  ]
 }

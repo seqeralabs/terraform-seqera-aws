@@ -1467,3 +1467,218 @@ variable "redis_subnet_group_description" {
   description = "The description of the Redis subnet group."
   default     = "Seqera Redis subnet group"
 }
+
+## Create EC2 instance
+variable "create_ec2_instance" {
+  type        = bool
+  description = "Determines whether to create an EC2 instance."
+  default     = false
+}
+
+## Create EC2 Spot instance
+variable "create_ec2_spot_instance" {
+  type        = bool
+  description = "Determines whether to create an EC2 spot instance."
+  default     = false
+}
+
+## EC2 Instance Name
+variable "ec2_instance_name" {
+  type        = string
+  description = "The name of the EC2 instance."
+  default     = "seqera-ec2-instance"
+}
+
+
+## EC2 Instance Type
+variable "ec2_instance_type" {
+  type        = string
+  description = "The type of the EC2 instance."
+  default     = "t3.micro"
+}
+
+## EC2 instance profile name
+variable "ec2_instance_profile_iam_policy_name" {
+  type        = string
+  description = "The name of the IAM policy for the EC2 instance profile."
+  default     = "seqera-forge-policy"
+}
+
+## EC2 instance profile name
+variable "ec2_instance_iam_role_name" {
+  type        = string
+  description = "The name of the IAM role for the EC2 instance."
+  default     = "seqera-forge-role"
+}
+
+## EC2 instance SSH key name
+variable "ec2_instance_key_name" {
+  type        = string
+  description = "The name of the key pair for the EC2 instance."
+  default     = null
+}
+
+## Enable EC2 instance monitoring
+variable "enable_ec2_instance_monitoring" {
+  type        = bool
+  description = "Determines whether detailed monitoring is enabled for the EC2 instance."
+  default     = true
+}
+
+## EC2 instance AMI ID
+variable "ec2_instance_ami_id" {
+  type        = string
+  description = "The ID of the AMI for the EC2 instance."
+  default     = ""
+}
+
+## Enables EC2 instance profile creation
+variable "create_ec2_instance_iam_instance_profile" {
+  type        = bool
+  description = "Determines whether to create an IAM instance profile for the EC2 instance."
+  default     = true
+}
+
+## EC2 instance get password data
+variable "get_ec2_instance_password_data" {
+  type        = bool
+  description = "Determines whether to get the password data for the EC2 instance."
+  default     = false
+}
+
+## EC2 instance IAM role description
+variable "ec2_instance_iam_role_description" {
+  type        = string
+  description = "The description of the IAM role for the EC2 instance."
+  default     = "Seqera Forge IAM role"
+}
+
+## EC2 instance security group name
+variable "ec2_instance_security_group_name" {
+  type        = string
+  description = "The name of the security group for the EC2 instance."
+  default     = "seqera-forge-security-group"
+}
+
+## EC2 instance security group egress CIDR block
+variable "ec2_instance_sg_ingress_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group ingress rule."
+  default     = ["0.0.0.0/0"]
+}
+
+## EC2 instance security group ingress CIDR block
+variable "ec2_instance_sg_egress_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group egress rule."
+  default     = ["0.0.0.0/0"]
+}
+
+variable "ec2_instan_security_group_ingress_rules_names" {
+  type        = list(string)
+  description = "The names of the security group ingress rules."
+  default     = ["http-80-tcp", "https-443", "smtp-tcp"]
+}
+
+## EC2 instance profile policy
+variable "ec2_instance_profile_iam_policy" {
+  type        = string
+  description = "IAM policy for the EC2 instance profile"
+  default     = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Sid": "TowerForge0",
+          "Effect": "Allow",
+          "Action": [
+              "ssm:GetParameters",
+              "iam:CreateInstanceProfile",
+              "iam:DeleteInstanceProfile",
+              "iam:GetRole",
+              "iam:RemoveRoleFromInstanceProfile",
+              "iam:CreateRole",
+              "iam:DeleteRole",
+              "iam:AttachRolePolicy",
+              "iam:PutRolePolicy",
+              "iam:AddRoleToInstanceProfile",
+              "iam:PassRole",
+              "iam:DetachRolePolicy",
+              "iam:ListAttachedRolePolicies",
+              "iam:DeleteRolePolicy",
+              "iam:ListRolePolicies",
+              "iam:TagRole",
+              "iam:TagInstanceProfile",
+              "batch:CreateComputeEnvironment",
+              "batch:DescribeComputeEnvironments",
+              "batch:CreateJobQueue",
+              "batch:DescribeJobQueues",
+              "batch:UpdateComputeEnvironment",
+              "batch:DeleteComputeEnvironment",
+              "batch:UpdateJobQueue",
+              "batch:DeleteJobQueue",
+              "fsx:DeleteFileSystem",
+              "fsx:DescribeFileSystems",
+              "fsx:CreateFileSystem",
+              "fsx:TagResource",
+              "ec2:DescribeSecurityGroups",
+              "ec2:DescribeAccountAttributes",
+              "ec2:DescribeSubnets",
+              "ec2:DescribeLaunchTemplates",
+              "ec2:DescribeLaunchTemplateVersions", 
+              "ec2:CreateLaunchTemplate",
+              "ec2:DeleteLaunchTemplate",
+              "ec2:DescribeKeyPairs",
+              "ec2:DescribeVpcs",
+              "ec2:DescribeInstanceTypeOfferings",
+              "ec2:GetEbsEncryptionByDefault",
+              "elasticfilesystem:DescribeMountTargets",
+              "elasticfilesystem:CreateMountTarget",
+              "elasticfilesystem:CreateFileSystem",
+              "elasticfilesystem:DescribeFileSystems",
+              "elasticfilesystem:DeleteMountTarget",
+              "elasticfilesystem:DeleteFileSystem",
+              "elasticfilesystem:UpdateFileSystem",
+              "elasticfilesystem:PutLifecycleConfiguration",
+              "elasticfilesystem:TagResource"
+          ],
+          "Resource": "*"
+      },
+      {
+          "Sid": "TowerLaunch0",
+          "Effect": "Allow",
+          "Action": [
+              "s3:Get*",
+              "s3:List*",
+              "batch:DescribeJobQueues",
+              "batch:CancelJob",
+              "batch:SubmitJob",
+              "batch:ListJobs",
+              "batch:TagResource",
+              "batch:DescribeComputeEnvironments",
+              "batch:TerminateJob",
+              "batch:DescribeJobs",
+              "batch:RegisterJobDefinition",
+              "batch:DescribeJobDefinitions",
+              "ecs:DescribeTasks",
+              "ec2:DescribeInstances",
+              "ec2:DescribeInstanceTypes",
+              "ec2:DescribeInstanceAttribute",
+              "ecs:DescribeContainerInstances",
+              "ec2:DescribeInstanceStatus",
+              "ec2:DescribeImages",
+              "logs:Describe*",
+              "logs:Get*",
+              "logs:List*",
+              "logs:StartQuery",
+              "logs:StopQuery",
+              "logs:TestMetricFilter",
+              "logs:FilterLogEvents",
+              "ses:SendRawEmail"
+          ],
+          "Resource": "*"
+      }
+  ]
+}
+EOF
+}
