@@ -1584,7 +1584,7 @@ variable "ec2_instance_sg_egress_cidr_blocks" {
 variable "ec2_instan_security_group_ingress_rules_names" {
   type        = list(string)
   description = "The names of the security group ingress rules."
-  default     = ["http-80-tcp", "https-443", "smtp-tcp"]
+  default     = ["http-80-tcp", "https-443-tcp", "smtp-tcp"]
 }
 
 ## EC2 instance profile policy
