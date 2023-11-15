@@ -1485,7 +1485,7 @@ module "ec2_instance" {
   get_password_data           = var.get_ec2_instance_password_data
   iam_role_description        = var.ec2_instance_iam_role_description
   iam_role_name               = var.ec2_instance_iam_role_name
-  iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "policy" = module.ec2_instance_profile_iam_policy[0].arn } : {}
+  iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
   iam_role_tags               = var.default_tags
 
   # Default tags for VPC resources.

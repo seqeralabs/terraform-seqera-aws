@@ -176,14 +176,13 @@ This Terraform code is licensed under the Apache License
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_azs"></a> [azs](#input\_azs) | A list of Availability Zones in the selected region. | `list(string)` | n/a | yes |
-| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster. | `string` | n/a | yes |
 | <a name="input_database_subnets"></a> [database\_subnets](#input\_database\_subnets) | A list of subnet IDs for database subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_elasticache_subnets"></a> [elasticache\_subnets](#input\_elasticache\_subnets) | A list of subnet IDs for Elasticache subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_intra_subnets"></a> [intra\_subnets](#input\_intra\_subnets) | A list of subnet IDs for intra subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | A list of subnet IDs for private subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | A list of subnet IDs for public subnets within the VPC. | `list(string)` | n/a | yes |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | The CIDR block for the VPC. | `string` | n/a | yes |
 | <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | The name of the Virtual Private Cloud (VPC) to be created. | `string` | n/a | yes |
+| <a name="input_alb_name"></a> [alb\_name](#input\_alb\_name) | The name of the load balancer. | `string` | `"seqera-alb"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#input\_aws\_cluster\_autoscaler\_iam\_policy) | IAM policy for the AWS Cluster Autoscaler | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:DescribeAutoScalingGroups\",\n        \"autoscaling:DescribeAutoScalingInstances\",\n        \"autoscaling:DescribeLaunchConfigurations\",\n        \"autoscaling:DescribeScalingActivities\",\n        \"autoscaling:DescribeTags\",\n        \"ec2:DescribeInstanceTypes\",\n        \"ec2:DescribeLaunchTemplateVersions\"\n      ],\n      \"Resource\": [\"*\"]\n    },\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:SetDesiredCapacity\",\n        \"autoscaling:TerminateInstanceInAutoScalingGroup\",\n        \"ec2:DescribeImages\",\n        \"ec2:GetInstanceTypesFromInstanceRequirements\",\n        \"eks:DescribeNodegroup\"\n      ],\n      \"Resource\": [\"*\"]\n    }\n  ]\n}\n"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy_name"></a> [aws\_cluster\_autoscaler\_iam\_policy\_name](#input\_aws\_cluster\_autoscaler\_iam\_policy\_name) | The name of the IAM policy for the AWS Cluster Autoscaler. | `string` | `"aws-cluster-autoscaler-iam-policy"` | no |
 | <a name="input_aws_cluster_autoscaler_version"></a> [aws\_cluster\_autoscaler\_version](#input\_aws\_cluster\_autoscaler\_version) | The version of the AWS Cluster Autoscaler to deploy. | `string` | `"9.29.3"` | no |
@@ -206,7 +205,9 @@ This Terraform code is licensed under the Apache License
 | <a name="input_aws_loadbalancer_controller_iam_policy_name"></a> [aws\_loadbalancer\_controller\_iam\_policy\_name](#input\_aws\_loadbalancer\_controller\_iam\_policy\_name) | The name of the IAM policy for the AWS LoadBalancer Controller | `string` | `"aws-loadbalancer-controller-iam-policy"` | no |
 | <a name="input_aws_loadbalancer_controller_version"></a> [aws\_loadbalancer\_controller\_version](#input\_aws\_loadbalancer\_controller\_version) | The version of the AWS LoadBalancer Controller to deploy | `string` | `"1.6.0"` | no |
 | <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | The AWS profile used for authentication when interacting with AWS resources. | `string` | `"default"` | no |
+| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster. | `string` | `"seqera"` | no |
 | <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | The version of Kubernetes to use for the EKS cluster. | `string` | `"1.27"` | no |
+| <a name="input_create_alb"></a> [create\_alb](#input\_create\_alb) | Determines whether to create an Application Load Balancer. | `bool` | `false` | no |
 | <a name="input_create_database_subnet_group"></a> [create\_database\_subnet\_group](#input\_create\_database\_subnet\_group) | Determines whether a database subnet group should be created. | `bool` | `true` | no |
 | <a name="input_create_database_subnet_route_table"></a> [create\_database\_subnet\_route\_table](#input\_create\_database\_subnet\_route\_table) | Determines whether a subnet route table should be created for the database subnets. | `bool` | `true` | no |
 | <a name="input_create_db_cluster"></a> [create\_db\_cluster](#input\_create\_db\_cluster) | Determines whether the database cluster should be created. | `bool` | `true` | no |
@@ -214,6 +215,8 @@ This Terraform code is licensed under the Apache License
 | <a name="input_create_ec2_instance"></a> [create\_ec2\_instance](#input\_create\_ec2\_instance) | Determines whether to create an EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_ec2_instance_iam_instance_profile"></a> [create\_ec2\_instance\_iam\_instance\_profile](#input\_create\_ec2\_instance\_iam\_instance\_profile) | Determines whether to create an IAM instance profile for the EC2 instance. | `bool` | `true` | no |
 | <a name="input_create_ec2_spot_instance"></a> [create\_ec2\_spot\_instance](#input\_create\_ec2\_spot\_instance) | Determines whether to create an EC2 spot instance. | `bool` | `false` | no |
+| <a name="input_create_eks_cluster"></a> [create\_eks\_cluster](#input\_create\_eks\_cluster) | Determines whether an EKS cluster should be created. | `bool` | `true` | no |
+| <a name="input_create_public_alb"></a> [create\_public\_alb](#input\_create\_public\_alb) | Determines whether to create a public load balancer. | `bool` | `true` | no |
 | <a name="input_create_redis_cluster"></a> [create\_redis\_cluster](#input\_create\_redis\_cluster) | Determines whether to create a Redis cluster. | `bool` | `true` | no |
 | <a name="input_create_seqera_namespace"></a> [create\_seqera\_namespace](#input\_create\_seqera\_namespace) | Determines whether to create the Seqera namespace. | `bool` | `true` | no |
 | <a name="input_create_seqera_service_account"></a> [create\_seqera\_service\_account](#input\_create\_seqera\_service\_account) | Determines whether to create the Seqera service account. | `bool` | `true` | no |
@@ -278,6 +281,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_enable_vpn_gateway"></a> [enable\_vpn\_gateway](#input\_enable\_vpn\_gateway) | Determines whether a VPN gateway should be provisioned. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the infrastructure is being deployed. | `string` | `""` | no |
 | <a name="input_get_ec2_instance_password_data"></a> [get\_ec2\_instance\_password\_data](#input\_get\_ec2\_instance\_password\_data) | Determines whether to get the password data for the EC2 instance. | `bool` | `false` | no |
+| <a name="input_intra_subnets"></a> [intra\_subnets](#input\_intra\_subnets) | A list of subnet IDs for intra subnets within the VPC. | `list(string)` | `[]` | no |
 | <a name="input_one_nat_gateway_per_az"></a> [one\_nat\_gateway\_per\_az](#input\_one\_nat\_gateway\_per\_az) | Determines whether each Availability Zone should have a dedicated NAT gateway. | `bool` | `true` | no |
 | <a name="input_redis_apply_immediately"></a> [redis\_apply\_immediately](#input\_redis\_apply\_immediately) | Determines whether changes should be applied immediately for Redis. | `bool` | `true` | no |
 | <a name="input_redis_at_rest_encryption_enabled"></a> [redis\_at\_rest\_encryption\_enabled](#input\_redis\_at\_rest\_encryption\_enabled) | Determines whether encryption at rest is enabled for Redis. | `bool` | `false` | no |

@@ -757,6 +757,7 @@ variable "seqera_managed_node_group_desired_size" {
 variable "intra_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for intra subnets within the VPC."
+  default     = []
 }
 
 ## Public Subnets
@@ -842,6 +843,7 @@ variable "azs" {
 variable "cluster_name" {
   type        = string
   description = "The name of the EKS cluster."
+  default     = "seqera"
 }
 
 ## EKS Cluster Version
@@ -1695,4 +1697,24 @@ variable "ec2_instance_profile_iam_policy" {
   ]
 }
 EOF
+}
+
+## Create Loadbalancer
+variable "create_alb" {
+  type        = bool
+  description = "Determines whether to create an Application Load Balancer."
+  default     = false
+}
+
+## Loadbalancer name
+variable "alb_name" {
+  type        = string
+  description = "The name of the load balancer."
+  default     = "seqera-alb"
+}
+
+variable "create_public_alb" {
+  type        = bool
+  description = "Determines whether to create a public load balancer."
+  default     = true
 }
