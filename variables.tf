@@ -97,6 +97,13 @@ variable "seqera_managed_node_group_min_size" {
   description = "The minimum size of the EKS managed node group."
 }
 
+## Create EKS cluster
+variable "create_eks_cluster" {
+  type        = bool
+  default     = true
+  description = "Determines whether an EKS cluster should be created."
+}
+
 ## Seqera Managed Node Group - Extra labels
 variable "seqera_managed_node_group_labels" {
   type        = map(string)
