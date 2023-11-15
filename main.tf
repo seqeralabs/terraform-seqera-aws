@@ -1144,9 +1144,10 @@ module "ec2_sg" {
   description = "Security group for access from seqera EC2 instance" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
   vpc_id      = module.vpc.vpc_id                                    # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = var.ec2_instance_sg_ingress_cidr_blocks           # Allows incoming traffic from the private subnets of the VPC.
-  ingress_rules       = var.ec2_instan_security_group_ingress_rules_names # Specific set of ingress rules.
-  egress_cidr_blocks  = var.ec2_instance_sg_egress_cidr_blocks            # Allows outgoing traffic to the private subnets of the VPC.
+  ingress_cidr_blocks = var.ec2_instance_sg_ingress_cidr_blocks             # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = var.ec2_instance_security_group_ingress_rules_names # Specific set of ingress rules.
+  egress_rules        = var.ec2_instance_secirity_group_egress_rules_names  # Specific set of egress rules.
+  egress_cidr_blocks  = var.ec2_instance_sg_egress_cidr_blocks              # Allows outgoing traffic to the private subnets of the VPC.
 
   depends_on = [module.vpc]
 }
@@ -1451,19 +1452,59 @@ module "seqera_irsa" {
 }
 
 ## Data to get the Ubunutu AMI ID
-data "aws_ami" "ubuntu" {
+data "aws_ami" "amazon_linux_2" {
   most_recent = true
-  owners      = ["679593333241"]
+
+  owners = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["ubuntu-minimal/images/hvm-ssd/ubuntu-focal-20.04-*"]
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+## AWS Key pair
+module "key_pair" {
+  source  = "terraform-aws-modules/key-pair/aws"
+  version = "2.0.2"
+  create  = var.create_ec2_instance && var.create_ec2_instance_local_key_pair || var.create_ec2_spot_instance && var.create_ec2_instance_local_key_pair ? true : false
+
+  key_name   = "local-key-pair"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+## VPC Endpoint for SSM Session Manager
+module "vpc_endpoints" {
+  source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
+  version = "~> 5.0"
+  create  = var.enable_ec2_instance_session_manager_access && var.create_ec2_instance ? true : false
+
+  vpc_id = module.vpc.vpc_id
+
+  endpoints = { for service in var.vpc_endpoint_services :
+    replace(service, ".", "_") =>
+    {
+      service             = service
+      subnet_ids          = module.vpc.private_subnets
+      private_dns_enabled = true
+      tags                = var.default_tags
+    }
   }
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
+  create_security_group      = true
+  security_group_name_prefix = "seqera-vpc-endpoints-"
+  security_group_description = "VPC endpoint security group"
+  security_group_rules = {
+    ingress_https = {
+      description = "HTTPS from subnets"
+      cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    }
   }
+
+  tags = var.default_tags
+  depends_on = [
+    module.vpc
+  ]
 }
 
 ## EC2 Instance Module
@@ -1476,17 +1517,20 @@ module "ec2_instance" {
   name = var.ec2_instance_name
 
   instance_type               = var.ec2_instance_type
-  key_name                    = var.ec2_instance_key_name
+  key_name                    = var.create_ec2_instance_local_key_pair ? module.key_pair.key_pair_name : var.ec2_instance_key_name
   monitoring                  = var.enable_ec2_instance_monitoring
   vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
   subnet_id                   = module.vpc.private_subnets[0]
-  ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.ubuntu.id
+  ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.amazon_linux_2.id
   create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
   get_password_data           = var.get_ec2_instance_password_data
   iam_role_description        = var.ec2_instance_iam_role_description
   iam_role_name               = var.ec2_instance_iam_role_name
   iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
   iam_role_tags               = var.default_tags
+
+  root_block_device = var.ec2_instance_root_block_device
+  ebs_block_device  = var.ebs_block_device
 
   # Default tags for VPC resources.
   tags = var.default_tags
@@ -1495,3 +1539,4 @@ module "ec2_instance" {
     module.vpc
   ]
 }
+

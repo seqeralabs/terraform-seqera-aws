@@ -1505,12 +1505,11 @@ variable "ec2_instance_name" {
   default     = "seqera-ec2-instance"
 }
 
-
 ## EC2 Instance Type
 variable "ec2_instance_type" {
   type        = string
   description = "The type of the EC2 instance."
-  default     = "t3.micro"
+  default     = "m5a.2xlarge"
 }
 
 ## EC2 instance profile name
@@ -1534,6 +1533,13 @@ variable "ec2_instance_key_name" {
   default     = null
 }
 
+## Create EC2 instnace local SSH key pair
+variable "create_ec2_instance_local_key_pair" {
+  type        = bool
+  description = "Determines whether to create a local SSH key pair for the EC2 instance."
+  default     = false
+}
+
 ## Enable EC2 instance monitoring
 variable "enable_ec2_instance_monitoring" {
   type        = bool
@@ -1546,6 +1552,31 @@ variable "ec2_instance_ami_id" {
   type        = string
   description = "The ID of the AMI for the EC2 instance."
   default     = ""
+}
+
+## EC2 root block device
+variable "ec2_instance_root_block_device" {
+  type        = list(any)
+  description = "The root block device for the EC2 instance."
+  default = [
+    {
+      volume_type = "gp3"
+      volume_size = 100
+    }
+  ]
+}
+
+## EC2 EBS block device
+variable "ebs_block_device" {
+  type        = list(any)
+  description = "The list of EBS block devices for the EC2 instance."
+  default = [
+    {
+      device_name = "/dev/sdx"
+      volume_type = "gp3"
+      volume_size = 100
+    }
+  ]
 }
 
 ## Enables EC2 instance profile creation
@@ -1590,10 +1621,30 @@ variable "ec2_instance_sg_egress_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
-variable "ec2_instan_security_group_ingress_rules_names" {
+variable "ec2_instance_security_group_ingress_rules_names" {
   type        = list(string)
   description = "The names of the security group ingress rules."
-  default     = ["http-80-tcp", "https-443-tcp", "smtp-tcp"]
+  default     = ["http-80-tcp", "https-443-tcp", "ssh-tcp"]
+}
+
+variable "ec2_instance_secirity_group_egress_rules_names" {
+  type        = list(string)
+  description = "The names of the security group egress rules."
+  default     = ["https-443-tcp"]
+}
+
+## Enable SSM Session Manager access
+variable "enable_ec2_instance_session_manager_access" {
+  type        = bool
+  description = "Determines whether SSM Session Manager access is enabled for the EC2 instance."
+  default     = false
+}
+
+## VPC Endpoint services
+variable "vpc_endpoint_services" {
+  type        = set(string)
+  description = "The list of VPC endpoint services."
+  default     = ["ssm", "ssmmessages", "ec2messages"]
 }
 
 ## EC2 instance profile policy
