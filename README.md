@@ -213,7 +213,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_create_ec2_instance_iam_instance_profile"></a> [create\_ec2\_instance\_iam\_instance\_profile](#input\_create\_ec2\_instance\_iam\_instance\_profile) | Determines whether to create an IAM instance profile for the EC2 instance. | `bool` | `true` | no |
 | <a name="input_create_ec2_instance_local_key_pair"></a> [create\_ec2\_instance\_local\_key\_pair](#input\_create\_ec2\_instance\_local\_key\_pair) | Determines whether to create a local SSH key pair for the EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_ec2_spot_instance"></a> [create\_ec2\_spot\_instance](#input\_create\_ec2\_spot\_instance) | Determines whether to create an EC2 spot instance. | `bool` | `false` | no |
-| <a name="input_create_eks_cluster"></a> [create\_eks\_cluster](#input\_create\_eks\_cluster) | Determines whether an EKS cluster should be created. | `bool` | `true` | no |
+| <a name="input_create_eks_cluster"></a> [create\_eks\_cluster](#input\_create\_eks\_cluster) | Determines whether an EKS cluster should be created. | `bool` | `false` | no |
 | <a name="input_create_public_alb"></a> [create\_public\_alb](#input\_create\_public\_alb) | Determines whether to create a public load balancer. | `bool` | `true` | no |
 | <a name="input_create_public_ec2_instance"></a> [create\_public\_ec2\_instance](#input\_create\_public\_ec2\_instance) | Determines whether to create a public EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_redis_cluster"></a> [create\_redis\_cluster](#input\_create\_redis\_cluster) | Determines whether to create a Redis cluster. | `bool` | `true` | no |

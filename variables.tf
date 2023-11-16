@@ -117,7 +117,7 @@ variable "seqera_managed_node_group_min_size" {
 ## Create EKS cluster
 variable "create_eks_cluster" {
   type        = bool
-  default     = true
+  default     = false
   description = "Determines whether an EKS cluster should be created."
 }
 
