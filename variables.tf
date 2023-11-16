@@ -55,6 +55,23 @@ variable "vpc_name" {
 variable "vpc_cidr" {
   type        = string
   description = "The CIDR block for the VPC."
+  default     = "10.0.0.0/16"
+
+  validation {
+    condition     = can(regex("^(10.0.0.0/16|172.31.0.0/16)$", var.vpc_cidr))
+    error_message = "Invalid VPC CIDR, only allowed are: '10.0.0.0/16', '172.31.0.0/16'. Default '10.0.0.0/16'"
+  }
+}
+
+## Number of Availability Zones
+variable "num_azs" {
+  type        = number
+  description = "The number of Availability Zones to use for the VPC."
+  default     = 2
+  validation {
+    condition     = var.num_azs <= 3 || var.num_azs >= 2
+    error_message = "The number of zones must be less than or equal to the number of available availability zones. Default '2'"
+  }
 }
 
 ## AWS LoadBalancer Controller
@@ -753,35 +770,18 @@ variable "seqera_managed_node_group_desired_size" {
   description = "The desired size of the EKS managed node group."
 }
 
-## VPC Subnets
-variable "intra_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for intra subnets within the VPC."
-  default     = []
-}
-
 ## Public Subnets
 variable "public_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for public subnets within the VPC."
+  default     = []
 }
 
 ## Private Subnets
 variable "private_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for private subnets within the VPC."
-}
-
-## Database Subnets
-variable "database_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for database subnets within the VPC."
-}
-
-## Elasticache Subnets
-variable "elasticache_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for Elasticache subnets within the VPC."
+  default     = []
 }
 
 ## Enable DNS Hostnames
@@ -831,12 +831,6 @@ variable "enable_vpn_gateway" {
   type        = bool
   default     = false
   description = "Determines whether a VPN gateway should be provisioned."
-}
-
-## Availability Zones
-variable "azs" {
-  type        = list(string)
-  description = "A list of Availability Zones in the selected region."
 }
 
 ## EKS Cluster Name
@@ -1540,6 +1534,20 @@ variable "create_ec2_instance_local_key_pair" {
   default     = false
 }
 
+## Local SSH key pair name
+variable "local_ssh_key_pair_name" {
+  type        = string
+  description = "The name of the local SSH key pair."
+  default     = "local-key-pair"
+}
+
+## Create public instance
+variable "create_public_ec2_instance" {
+  type        = bool
+  description = "Determines whether to create a public EC2 instance."
+  default     = false
+}
+
 ## Enable EC2 instance monitoring
 variable "enable_ec2_instance_monitoring" {
   type        = bool
@@ -1642,7 +1650,7 @@ variable "enable_ec2_instance_session_manager_access" {
 
 ## VPC Endpoint services
 variable "vpc_endpoint_services" {
-  type        = set(string)
+  type        = list(string)
   description = "The list of VPC endpoint services."
   default     = ["ssm", "ssmmessages", "ec2messages"]
 }

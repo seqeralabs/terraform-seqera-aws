@@ -46,9 +46,20 @@ provider "helm" {
 
 data "aws_caller_identity" "current" {}
 
+data "aws_availability_zones" "available" {}
+
 data "aws_eks_cluster_auth" "this" {
   count = var.create_eks_cluster ? 1 : 0
   name  = module.eks.cluster_name
+}
+
+locals {
+  azs                 = slice(data.aws_availability_zones.available.names, 0, var.num_azs)
+  intra_subnets       = var.create_eks_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)] : []
+  database_subnets    = var.create_db_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 4)] : []
+  elasticache_subnets = var.create_redis_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 8)] : []
+  private_subnets     = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 12)]
+  public_subnets      = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 16)]
 }
 
 # This module provisions a VPC (Virtual Private Cloud) in AWS using the terraform-aws-modules' VPC module.
@@ -67,15 +78,15 @@ module "vpc" {
   enable_dns_support   = var.enable_dns_support
 
   # Define the Availability Zones for the VPC and the CIDR blocks for various subnets.
-  azs             = var.azs
-  private_subnets = var.private_subnets
-  public_subnets  = var.public_subnets
+  azs             = local.azs
+  private_subnets = local.private_subnets
+  public_subnets  = local.public_subnets
 
   # Conditionally create database and elasticache subnets based on variables.
-  database_subnets    = var.create_db_cluster ? var.database_subnets : []
-  elasticache_subnets = var.create_redis_cluster ? var.elasticache_subnets : []
+  database_subnets    = local.database_subnets
+  elasticache_subnets = local.elasticache_subnets
 
-  intra_subnets = var.intra_subnets
+  intra_subnets = local.intra_subnets
 
   # Tags for the private and public subnets, commonly used for identifying subnets for Kubernetes clusters.
   private_subnet_tags = {
@@ -1247,7 +1258,7 @@ module "redis" {
   version = "0.52.0"
   count   = var.create_redis_cluster ? 1 : 0
 
-  availability_zones            = var.azs
+  availability_zones            = local.azs
   vpc_id                        = module.vpc.vpc_id
   description                   = var.redis_cluster_description
   allowed_security_group_ids    = [module.eks.cluster_primary_security_group_id]
@@ -1469,8 +1480,12 @@ module "key_pair" {
   version = "2.0.2"
   create  = var.create_ec2_instance && var.create_ec2_instance_local_key_pair || var.create_ec2_spot_instance && var.create_ec2_instance_local_key_pair ? true : false
 
-  key_name   = "local-key-pair"
+  key_name   = var.local_ssh_key_pair_name
   public_key = file("~/.ssh/id_rsa.pub")
+}
+
+locals {
+  vpc_endpoint_services = var.create_public_ec2_instance ? concat(var.vpc_endpoint_services, ["rds", "elasticache"]) : var.vpc_endpoint_services
 }
 
 ## VPC Endpoint for SSM Session Manager
@@ -1481,11 +1496,11 @@ module "vpc_endpoints" {
 
   vpc_id = module.vpc.vpc_id
 
-  endpoints = { for service in var.vpc_endpoint_services :
+  endpoints = { for service in toset(local.vpc_endpoint_services) :
     replace(service, ".", "_") =>
     {
       service             = service
-      subnet_ids          = module.vpc.private_subnets
+      subnet_ids          = var.create_public_ec2_instance ? module.vpc.public_subnets : module.vpc.private_subnets
       private_dns_enabled = true
       tags                = var.default_tags
     }
@@ -1497,7 +1512,7 @@ module "vpc_endpoints" {
   security_group_rules = {
     ingress_https = {
       description = "HTTPS from subnets"
-      cidr_blocks = module.vpc.private_subnets_cidr_blocks
+      cidr_blocks = var.create_public_ec2_instance ? module.vpc.public_subnets_cidr_blocks : module.vpc.private_subnets_cidr_blocks
     }
   }
 
@@ -1520,7 +1535,8 @@ module "ec2_instance" {
   key_name                    = var.create_ec2_instance_local_key_pair ? module.key_pair.key_pair_name : var.ec2_instance_key_name
   monitoring                  = var.enable_ec2_instance_monitoring
   vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
-  subnet_id                   = module.vpc.private_subnets[0]
+  subnet_id                   = var.create_public_ec2_instance ? module.vpc.public_subnets[0] : module.vpc.private_subnets[0]
+  associate_public_ip_address = var.create_public_ec2_instance
   ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.amazon_linux_2.id
   create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
   get_password_data           = var.get_ec2_instance_password_data
