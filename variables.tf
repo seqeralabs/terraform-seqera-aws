@@ -38,13 +38,6 @@ variable "default_tags" {
   description = "Default tags to be applied to the provisioned resources."
 }
 
-## AWS Profile
-variable "aws_profile" {
-  type        = string
-  default     = "default"
-  description = "The AWS profile used for authentication when interacting with AWS resources."
-}
-
 ## VPC Name
 variable "vpc_name" {
   type        = string
@@ -1532,6 +1525,13 @@ variable "create_ec2_instance_local_key_pair" {
   type        = bool
   description = "Determines whether to create a local SSH key pair for the EC2 instance."
   default     = false
+}
+
+## EC2 instance SSH public key path
+variable "ec2_instance_ssh_public_key_path" {
+  type        = string
+  description = "The path to the public key for the EC2 instance."
+  default     = "~/.ssh/id_rsa.pub"
 }
 
 ## Local SSH key pair name

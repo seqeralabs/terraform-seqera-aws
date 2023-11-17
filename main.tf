@@ -1481,7 +1481,7 @@ module "key_pair" {
   create  = var.create_ec2_instance && var.create_ec2_instance_local_key_pair || var.create_ec2_spot_instance && var.create_ec2_instance_local_key_pair ? true : false
 
   key_name   = var.local_ssh_key_pair_name
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file(var.ec2_instance_ssh_public_key_path)
 }
 
 locals {
