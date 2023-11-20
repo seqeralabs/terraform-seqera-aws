@@ -95,6 +95,8 @@ output "ec2_instance_public_dns_name" {
 }
 ```
 
+Note: To connect to the EC2 instance use the following syntax `ssh ec2-user@<EC2 Instance Public DNS Name>`
+
 ## Example of public EC2 instance with existing AWS key pair `main.tf`
 ```hcl
 module "terraform-seqera-aws" {
