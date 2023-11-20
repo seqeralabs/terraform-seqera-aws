@@ -1534,6 +1534,13 @@ variable "ec2_instance_ssh_public_key_path" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
+## EC2 instance user data replace on change
+variable "ec2_instance_user_data_replace_on_change" {
+  type        = bool
+  description = "Determines whether the EC2 instance user data should be replaced on change."
+  default     = true
+}
+
 ## Local SSH key pair name
 variable "local_ssh_key_pair_name" {
   type        = string
@@ -1645,7 +1652,7 @@ variable "ec2_instance_security_group_ingress_rules_names" {
 variable "ec2_instance_secirity_group_egress_rules_names" {
   type        = list(string)
   description = "The names of the security group egress rules."
-  default     = ["https-443-tcp"]
+  default     = ["all-all"]
 }
 
 ## Enable SSM Session Manager access

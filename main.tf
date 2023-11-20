@@ -1107,8 +1107,8 @@ module "db_sg" {
   description = "Security group for access from seqera EKS cluster to seqera db" # Description of the purpose of this security group.
   vpc_id      = module.vpc.vpc_id                                                # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
-  ingress_rules       = [var.db_ingress_rule_name]             # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
+  ingress_cidr_blocks = [module.vpc.vpc_cidr_block] # Allows incoming traffic from the subnets of the VPC.
+  ingress_rules       = [var.db_ingress_rule_name]  # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
 
   depends_on = [module.vpc]
 }
@@ -1123,8 +1123,8 @@ module "redis_sg" {
   description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group.
   vpc_id      = module.vpc.vpc_id                                                   # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
-  ingress_rules       = [var.redis_ingress_rule]               # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
+  ingress_cidr_blocks = [module.vpc.vpc_cidr_block] # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = [var.redis_ingress_rule]    # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
 
   depends_on = [module.vpc]
 }
@@ -1522,6 +1522,18 @@ module "vpc_endpoints" {
   ]
 }
 
+locals {
+  ec2_instance_user_data = <<EOF
+#!/bin/bash
+yum apt update -y
+yum install mysql -y
+mysql --host=${module.db[0].db_instance_address} --user=${var.db_root_username} --password=${local.db_root_password} \
+-Bse "ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin;
+CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY "${local.db_app_password}";
+GRANT ALL PRIVILEGES ON ${var.db_app_username}.* TO ${var.db_app_username}@'%';"
+EOF
+}
+
 ## EC2 Instance Module
 module "ec2_instance" {
   source               = "terraform-aws-modules/ec2-instance/aws"
@@ -1545,6 +1557,8 @@ module "ec2_instance" {
   iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
   iam_role_tags               = var.default_tags
   ignore_ami_changes          = var.ignore_ec2_instance_ami_changes
+  user_data_base64            = var.create_db_cluster ? base64encode(local.ec2_instance_user_data) : null
+  user_data_replace_on_change = var.ec2_instance_user_data_replace_on_change
 
   root_block_device = var.ec2_instance_root_block_device
   ebs_block_device  = var.ebs_block_device
