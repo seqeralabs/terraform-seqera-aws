@@ -72,7 +72,7 @@ module "terraform-seqera-aws" {
   ## EC2 Instance
   create_ec2_instance = true
   create_ec2_instance_local_key_pair = true
-  create_public_ec2_instance = true
+  create_ec2_public_instance = true
 
   default_tags = {
     Environment = "development"
@@ -107,7 +107,7 @@ module "terraform-seqera-aws" {
   ## EC2 Instance
   create_ec2_instance = true
   ec2_instance_key_name = "my-key-pair"
-  create_public_ec2_instance = true
+  create_ec2_public_instance = true
 
   default_tags = {
     Environment = "development"
@@ -178,7 +178,7 @@ module "terraform-seqera-aws" {
   ## EC2 Instance
   create_ec2_instance = true
   enable_ec2_instance_session_manager_access = true
-  create_public_ec2_instance = true
+  create_ec2_public_instance = true
   ec2_instance_security_group_ingress_rules_names = ["http-80-tcp", "https-443-tcp"]
 
   default_tags = {
@@ -341,10 +341,10 @@ This Terraform code is licensed under the Apache License
 | <a name="input_create_ec2_instance"></a> [create\_ec2\_instance](#input\_create\_ec2\_instance) | Determines whether to create an EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_ec2_instance_iam_instance_profile"></a> [create\_ec2\_instance\_iam\_instance\_profile](#input\_create\_ec2\_instance\_iam\_instance\_profile) | Determines whether to create an IAM instance profile for the EC2 instance. | `bool` | `true` | no |
 | <a name="input_create_ec2_instance_local_key_pair"></a> [create\_ec2\_instance\_local\_key\_pair](#input\_create\_ec2\_instance\_local\_key\_pair) | Determines whether to create a local SSH key pair for the EC2 instance. | `bool` | `false` | no |
+| <a name="input_create_ec2_public_instance"></a> [create\_ec2\_public\_instance](#input\_create\_ec2\_public\_instance) | Determines whether to create a public EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_ec2_spot_instance"></a> [create\_ec2\_spot\_instance](#input\_create\_ec2\_spot\_instance) | Determines whether to create an EC2 spot instance. | `bool` | `false` | no |
 | <a name="input_create_eks_cluster"></a> [create\_eks\_cluster](#input\_create\_eks\_cluster) | Determines whether an EKS cluster should be created. | `bool` | `false` | no |
 | <a name="input_create_public_alb"></a> [create\_public\_alb](#input\_create\_public\_alb) | Determines whether to create a public load balancer. | `bool` | `true` | no |
-| <a name="input_create_public_ec2_instance"></a> [create\_public\_ec2\_instance](#input\_create\_public\_ec2\_instance) | Determines whether to create a public EC2 instance. | `bool` | `false` | no |
 | <a name="input_create_redis_cluster"></a> [create\_redis\_cluster](#input\_create\_redis\_cluster) | Determines whether to create a Redis cluster. | `bool` | `true` | no |
 | <a name="input_create_seqera_namespace"></a> [create\_seqera\_namespace](#input\_create\_seqera\_namespace) | Determines whether to create the Seqera namespace. | `bool` | `true` | no |
 | <a name="input_create_seqera_service_account"></a> [create\_seqera\_service\_account](#input\_create\_seqera\_service\_account) | Determines whether to create the Seqera service account. | `bool` | `true` | no |
@@ -388,7 +388,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_ec2_instance_profile_iam_policy_name"></a> [ec2\_instance\_profile\_iam\_policy\_name](#input\_ec2\_instance\_profile\_iam\_policy\_name) | The name of the IAM policy for the EC2 instance profile. | `string` | `"seqera-forge-policy"` | no |
 | <a name="input_ec2_instance_root_block_device"></a> [ec2\_instance\_root\_block\_device](#input\_ec2\_instance\_root\_block\_device) | The root block device for the EC2 instance. | `list(any)` | <pre>[<br>  {<br>    "volume_size": 100,<br>    "volume_type": "gp3"<br>  }<br>]</pre> | no |
 | <a name="input_ec2_instance_secirity_group_egress_rules_names"></a> [ec2\_instance\_secirity\_group\_egress\_rules\_names](#input\_ec2\_instance\_secirity\_group\_egress\_rules\_names) | The names of the security group egress rules. | `list(string)` | <pre>[<br>  "https-443-tcp"<br>]</pre> | no |
-| <a name="input_ec2_instance_security_group_ingress_rules_names"></a> [ec2\_instance\_security\_group\_ingress\_rules\_names](#input\_ec2\_instance\_security\_group\_ingress\_rules\_names) | The names of the security group ingress rules. | `list(string)` | <pre>[<br>  "http-80-tcp",<br>  "https-443-tcp",<br>  "ssh-tcp"<br>]</pre> | no |
+| <a name="input_ec2_instance_security_group_ingress_rules_names"></a> [ec2\_instance\_security\_group\_ingress\_rules\_names](#input\_ec2\_instance\_security\_group\_ingress\_rules\_names) | The names of the security group ingress rules. | `list(string)` | <pre>[<br>  "http-80-tcp",<br>  "https-443-tcp",<br>  "ssh-tcp",<br>  "kubernetes-api-tcp"<br>]</pre> | no |
 | <a name="input_ec2_instance_security_group_name"></a> [ec2\_instance\_security\_group\_name](#input\_ec2\_instance\_security\_group\_name) | The name of the security group for the EC2 instance. | `string` | `"seqera-forge-security-group"` | no |
 | <a name="input_ec2_instance_sg_egress_cidr_blocks"></a> [ec2\_instance\_sg\_egress\_cidr\_blocks](#input\_ec2\_instance\_sg\_egress\_cidr\_blocks) | The CIDR blocks for the security group egress rule. | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
 | <a name="input_ec2_instance_sg_ingress_cidr_blocks"></a> [ec2\_instance\_sg\_ingress\_cidr\_blocks](#input\_ec2\_instance\_sg\_ingress\_cidr\_blocks) | The CIDR blocks for the security group ingress rule. | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
@@ -414,6 +414,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_enable_vpn_gateway"></a> [enable\_vpn\_gateway](#input\_enable\_vpn\_gateway) | Determines whether a VPN gateway should be provisioned. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the infrastructure is being deployed. | `string` | `""` | no |
 | <a name="input_get_ec2_instance_password_data"></a> [get\_ec2\_instance\_password\_data](#input\_get\_ec2\_instance\_password\_data) | Determines whether to get the password data for the EC2 instance. | `bool` | `false` | no |
+| <a name="input_ignore_ec2_instance_ami_changes"></a> [ignore\_ec2\_instance\_ami\_changes](#input\_ignore\_ec2\_instance\_ami\_changes) | Determines whether to ignore AMI changes for the EC2 instance. | `bool` | `true` | no |
 | <a name="input_local_ssh_key_pair_name"></a> [local\_ssh\_key\_pair\_name](#input\_local\_ssh\_key\_pair\_name) | The name of the local SSH key pair. | `string` | `"local-key-pair"` | no |
 | <a name="input_num_azs"></a> [num\_azs](#input\_num\_azs) | The number of Availability Zones to use for the VPC. | `number` | `2` | no |
 | <a name="input_one_nat_gateway_per_az"></a> [one\_nat\_gateway\_per\_az](#input\_one\_nat\_gateway\_per\_az) | Determines whether each Availability Zone should have a dedicated NAT gateway. | `bool` | `true` | no |

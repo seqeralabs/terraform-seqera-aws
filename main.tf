@@ -1485,7 +1485,7 @@ module "key_pair" {
 }
 
 locals {
-  vpc_endpoint_services = var.create_public_ec2_instance ? concat(var.vpc_endpoint_services, ["rds", "elasticache"]) : var.vpc_endpoint_services
+  vpc_endpoint_services = var.create_ec2_public_instance ? concat(var.vpc_endpoint_services, ["rds", "elasticache"]) : var.vpc_endpoint_services
 }
 
 ## VPC Endpoint for SSM Session Manager
@@ -1500,7 +1500,7 @@ module "vpc_endpoints" {
     replace(service, ".", "_") =>
     {
       service             = service
-      subnet_ids          = var.create_public_ec2_instance ? module.vpc.public_subnets : module.vpc.private_subnets
+      subnet_ids          = var.create_ec2_public_instance ? module.vpc.public_subnets : module.vpc.private_subnets
       private_dns_enabled = true
       tags                = var.default_tags
     }
@@ -1512,7 +1512,7 @@ module "vpc_endpoints" {
   security_group_rules = {
     ingress_https = {
       description = "HTTPS from subnets"
-      cidr_blocks = var.create_public_ec2_instance ? module.vpc.public_subnets_cidr_blocks : module.vpc.private_subnets_cidr_blocks
+      cidr_blocks = var.create_ec2_public_instance ? module.vpc.public_subnets_cidr_blocks : module.vpc.private_subnets_cidr_blocks
     }
   }
 
@@ -1535,8 +1535,8 @@ module "ec2_instance" {
   key_name                    = var.create_ec2_instance_local_key_pair ? module.key_pair.key_pair_name : var.ec2_instance_key_name
   monitoring                  = var.enable_ec2_instance_monitoring
   vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
-  subnet_id                   = var.create_public_ec2_instance ? module.vpc.public_subnets[0] : module.vpc.private_subnets[0]
-  associate_public_ip_address = var.create_public_ec2_instance
+  subnet_id                   = var.create_ec2_public_instance ? module.vpc.public_subnets[0] : module.vpc.private_subnets[0]
+  associate_public_ip_address = var.create_ec2_public_instance
   ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.amazon_linux_2.id
   create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
   get_password_data           = var.get_ec2_instance_password_data
@@ -1544,6 +1544,7 @@ module "ec2_instance" {
   iam_role_name               = var.ec2_instance_iam_role_name
   iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
   iam_role_tags               = var.default_tags
+  ignore_ami_changes          = var.ignore_ec2_instance_ami_changes
 
   root_block_device = var.ec2_instance_root_block_device
   ebs_block_device  = var.ebs_block_device

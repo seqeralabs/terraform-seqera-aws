@@ -1542,7 +1542,7 @@ variable "local_ssh_key_pair_name" {
 }
 
 ## Create public instance
-variable "create_public_ec2_instance" {
+variable "create_ec2_public_instance" {
   type        = bool
   description = "Determines whether to create a public EC2 instance."
   default     = false
@@ -1552,6 +1552,13 @@ variable "create_public_ec2_instance" {
 variable "enable_ec2_instance_monitoring" {
   type        = bool
   description = "Determines whether detailed monitoring is enabled for the EC2 instance."
+  default     = true
+}
+
+## Ignore EC2 instance AMI changes
+variable "ignore_ec2_instance_ami_changes" {
+  type        = bool
+  description = "Determines whether to ignore AMI changes for the EC2 instance."
   default     = true
 }
 
@@ -1632,7 +1639,7 @@ variable "ec2_instance_sg_egress_cidr_blocks" {
 variable "ec2_instance_security_group_ingress_rules_names" {
   type        = list(string)
   description = "The names of the security group ingress rules."
-  default     = ["http-80-tcp", "https-443-tcp", "ssh-tcp"]
+  default     = ["http-80-tcp", "https-443-tcp", "ssh-tcp", "kubernetes-api-tcp"]
 }
 
 variable "ec2_instance_secirity_group_egress_rules_names" {
