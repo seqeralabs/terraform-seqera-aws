@@ -1489,7 +1489,7 @@ variable "create_ec2_spot_instance" {
 variable "ec2_instance_name" {
   type        = string
   description = "The name of the EC2 instance."
-  default     = "seqera-ec2-instance"
+  default     = "seqera-platform-vm"
 }
 
 ## EC2 Instance Type
@@ -1545,7 +1545,7 @@ variable "ec2_instance_user_data_replace_on_change" {
 variable "local_ssh_key_pair_name" {
   type        = string
   description = "The name of the local SSH key pair."
-  default     = "local-key-pair"
+  default     = "seqera-platform-keypair"
 }
 
 ## Create public instance
