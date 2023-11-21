@@ -15,33 +15,51 @@
 #
 #
 
+locals {
+  kubernetes_host                   = module.eks.cluster_endpoint
+  kubernetes_cluster_ca_certificate = try(base64decode(module.eks.cluster_certificate_authority_data), null)
+  kubernetes_token                  = try(data.aws_eks_cluster_auth.this[0].token, null)
+}
+
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.this.token
+  host                   = local.kubernetes_host
+  cluster_ca_certificate = local.kubernetes_cluster_ca_certificate
+  token                  = local.kubernetes_token
 }
 
 provider "kubectl" {
   apply_retry_count      = 5
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.this.token
+  host                   = local.kubernetes_host
+  cluster_ca_certificate = local.kubernetes_cluster_ca_certificate
+  token                  = local.kubernetes_token
   load_config_file       = false
 }
 
 provider "helm" {
   debug = true
   kubernetes {
-    host                   = module.eks.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.this.token
+    host                   = local.kubernetes_host
+    cluster_ca_certificate = local.kubernetes_cluster_ca_certificate
+    token                  = local.kubernetes_token
   }
 }
 
 data "aws_caller_identity" "current" {}
 
+data "aws_availability_zones" "available" {}
+
 data "aws_eks_cluster_auth" "this" {
-  name = module.eks.cluster_name
+  count = var.create_eks_cluster ? 1 : 0
+  name  = module.eks.cluster_name
+}
+
+locals {
+  azs                 = slice(data.aws_availability_zones.available.names, 0, var.num_azs)
+  intra_subnets       = var.create_eks_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k)] : []
+  database_subnets    = var.create_db_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 4)] : []
+  elasticache_subnets = var.create_redis_cluster ? [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 8)] : []
+  private_subnets     = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 12)]
+  public_subnets      = [for k, v in local.azs : cidrsubnet(var.vpc_cidr, 8, k + 16)]
 }
 
 # This module provisions a VPC (Virtual Private Cloud) in AWS using the terraform-aws-modules' VPC module.
@@ -60,15 +78,15 @@ module "vpc" {
   enable_dns_support   = var.enable_dns_support
 
   # Define the Availability Zones for the VPC and the CIDR blocks for various subnets.
-  azs             = var.azs
-  private_subnets = var.private_subnets
-  public_subnets  = var.public_subnets
+  azs             = local.azs
+  private_subnets = local.private_subnets
+  public_subnets  = local.public_subnets
 
   # Conditionally create database and elasticache subnets based on variables.
-  database_subnets    = var.create_db_cluster ? var.database_subnets : []
-  elasticache_subnets = var.create_redis_cluster ? var.elasticache_subnets : []
+  database_subnets    = local.database_subnets
+  elasticache_subnets = local.elasticache_subnets
 
-  intra_subnets = var.intra_subnets
+  intra_subnets = local.intra_subnets
 
   # Tags for the private and public subnets, commonly used for identifying subnets for Kubernetes clusters.
   private_subnet_tags = {
@@ -130,6 +148,7 @@ locals {
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.19.0" # Specifies the version of the EKS module to use.
+  create  = var.create_eks_cluster
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -184,7 +203,7 @@ module "eks" {
 
 # A resource to create a Kubernetes namespace.
 resource "kubernetes_namespace_v1" "this" {
-  count = var.create_seqera_namespace ? 1 : 0 || var.create_seqera_service_account ? 1 : 0
+  count = var.create_seqera_namespace && var.create_eks_cluster || var.create_seqera_service_account && var.create_eks_cluster ? 1 : 0
 
   metadata {
     name = var.seqera_namespace_name
@@ -193,7 +212,7 @@ resource "kubernetes_namespace_v1" "this" {
 
 # A resource to create a Kubernetes service account within the specified namespace.
 resource "kubernetes_service_account_v1" "this" {
-  count = var.create_seqera_service_account ? 1 : 0
+  count = var.create_seqera_service_account && var.create_eks_cluster ? 1 : 0
 
   metadata {
     name      = var.seqera_service_account_name
@@ -210,7 +229,7 @@ resource "kubernetes_service_account_v1" "this" {
 
 # DB Secret
 resource "kubernetes_secret_v1" "db_app_password" {
-  count = var.create_db_cluster && var.create_db_password_secret ? 1 : 0
+  count = var.create_db_cluster && var.create_db_password_secret && var.create_eks_cluster ? 1 : 0
   metadata {
     name      = var.db_password_secret_name
     namespace = var.seqera_namespace_name
@@ -230,7 +249,7 @@ resource "kubernetes_secret_v1" "db_app_password" {
 
 # Config Map
 resource "kubernetes_config_map_v1" "tower_app_configmap" {
-  count = var.create_db_cluster && var.create_redis_cluster && var.create_tower_app_configmap ? 1 : 0
+  count = var.create_db_cluster && var.create_redis_cluster && var.create_tower_app_configmap && var.create_eks_cluster ? 1 : 0
   metadata {
     name      = var.tower_app_configmap_name
     namespace = var.seqera_namespace_name
@@ -256,7 +275,7 @@ locals {
 
 # This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
 resource "kubernetes_job_v1" "seqera_schema_job" {
-  count = var.create_db_cluster ? 1 : 0
+  count = var.create_db_cluster && var.create_db_cluster && var.create_eks_cluster ? 1 : 0
   metadata {
     name      = var.db_setup_job_name
     namespace = var.seqera_namespace_name
@@ -281,7 +300,7 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
             "-e", <<-EOT
               ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin;
               CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY "${local.db_app_password}";
-              GRANT ALL PRIVILEGES ON ${var.db_app_username}.* TO ${var.db_app_username}@'%';
+              GRANT ALL PRIVILEGES ON ${var.db_app_schema_name}.* TO ${var.db_app_username}@'%';
             EOT
           ]
         }
@@ -310,7 +329,7 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
 
 # A Helm release resource for deploying the AWS cluster autoscaler using the Helm package manager.
 resource "helm_release" "aws_cluster_autoscaler" {
-  count = var.enable_aws_cluster_autoscaler ? 1 : 0
+  count = var.enable_aws_cluster_autoscaler && var.create_eks_cluster ? 1 : 0
 
   name       = "aws-cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
@@ -338,7 +357,7 @@ resource "helm_release" "aws_cluster_autoscaler" {
 
 # A Helm release resource for deploying the AWS EBS CSI driver using the Helm package manager.
 resource "helm_release" "aws-ebs-csi-driver" {
-  count = var.enable_aws_ebs_csi_driver ? 1 : 0
+  count = var.enable_aws_ebs_csi_driver && var.create_eks_cluster ? 1 : 0
 
   name       = "aws-ebs-csi-driver"
   repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver/"
@@ -357,7 +376,7 @@ resource "helm_release" "aws-ebs-csi-driver" {
 
 # Customer Resource Definition (CRD) for the AWS Load Balancer Controller.
 resource "kubectl_manifest" "aws_loadbalancer_controller_crd" {
-  count     = var.enable_aws_loadbalancer_controller ? 1 : 0
+  count     = var.enable_aws_loadbalancer_controller && var.create_eks_cluster ? 1 : 0
   yaml_body = <<YAML
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -958,7 +977,7 @@ YAML
 
 # A Helm release resource for deploying the AWS Load Balancer Controller using the Helm package manager.
 resource "helm_release" "aws-load-balancer-controller" {
-  count = var.enable_aws_loadbalancer_controller ? 1 : 0
+  count = var.enable_aws_loadbalancer_controller && var.create_eks_cluster ? 1 : 0
 
   name            = "aws-load-balancer-controller"
   repository      = "https://aws.github.io/eks-charts"
@@ -994,11 +1013,12 @@ resource "helm_release" "aws-load-balancer-controller" {
     kubectl_manifest.aws_loadbalancer_controller_crd
   ]
 }
+
 # This resource creates an AWS Elastic File System (EFS) specifically for the EKS cluster.
 resource "aws_efs_file_system" "eks_efs" {
-  count            = var.enable_aws_efs_csi_driver ? 1 : 0      # Only creates the EFS if the `enable_aws_efs_csi_driver` variable is true.
-  creation_token   = var.aws_efs_csi_driver_creation_token_name # Token used to ensure idempotent creation (preventing duplicate filesystems).
-  performance_mode = var.aws_efs_csi_driver_performance_mode    # Defines the performance mode for the EFS (generalPurpose or maxIO).
+  count            = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Only creates the EFS if the `enable_aws_efs_csi_driver` variable is true.
+  creation_token   = var.aws_efs_csi_driver_creation_token_name                      # Token used to ensure idempotent creation (preventing duplicate filesystems).
+  performance_mode = var.aws_efs_csi_driver_performance_mode                         # Defines the performance mode for the EFS (generalPurpose or maxIO).
 
   tags = {
     Name = var.cluster_name # Tags the EFS with the cluster name.
@@ -1007,8 +1027,8 @@ resource "aws_efs_file_system" "eks_efs" {
 
 # This resource creates a backup policy for the EFS.
 resource "aws_efs_backup_policy" "eks_efs" {
-  count          = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the backup policy if the `enable_aws_efs_csi_driver` variable is true.
-  file_system_id = aws_efs_file_system.eks_efs[0].id     # References the ID of the EFS created above.
+  count          = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Only creates the backup policy if the `enable_aws_efs_csi_driver` variable is true.
+  file_system_id = aws_efs_file_system.eks_efs[0].id                               # References the ID of the EFS created above.
 
   backup_policy {
     status = var.aws_efs_csi_driver_backup_policy_status # Status of the backup policy (usually either "ENABLED" or "DISABLED").
@@ -1017,10 +1037,10 @@ resource "aws_efs_backup_policy" "eks_efs" {
 
 # This resource creates mount targets for the EFS within the private subnets of the VPC.
 resource "aws_efs_mount_target" "eks_efs_mount_target" {
-  count           = var.enable_aws_efs_csi_driver ? length(module.vpc.private_subnets) : 0 # Creates a mount target for each private subnet if `enable_aws_efs_csi_driver` is true.
-  file_system_id  = aws_efs_file_system.eks_efs[0].id                                      # References the ID of the EFS created above.
-  subnet_id       = element(module.vpc.private_subnets, count.index)                       # Specifies which private subnet the mount target will be in.
-  security_groups = [module.efs_sg[0].security_group_id]                                   # Security group associated with the EFS mount target.
+  count           = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? length(module.vpc.private_subnets) : 0 # Creates a mount target for each private subnet if `enable_aws_efs_csi_driver` is true.
+  file_system_id  = aws_efs_file_system.eks_efs[0].id                                                                # References the ID of the EFS created above.
+  subnet_id       = element(module.vpc.private_subnets, count.index)                                                 # Specifies which private subnet the mount target will be in.
+  security_groups = [module.efs_sg[0].security_group_id]                                                             # Security group associated with the EFS mount target.
 
   depends_on = [
     module.vpc,
@@ -1030,13 +1050,13 @@ resource "aws_efs_mount_target" "eks_efs_mount_target" {
 
 # This resource creates an access point for the EFS. Access points are application-specific entry points into the EFS.
 resource "aws_efs_access_point" "eks_efs_access_point" {
-  count          = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the access point if the `enable_aws_efs_csi_driver` variable is true.
-  file_system_id = aws_efs_file_system.eks_efs[0].id     # References the ID of the EFS created above.
+  count          = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Only creates the access point if the `enable_aws_efs_csi_driver` variable is true.
+  file_system_id = aws_efs_file_system.eks_efs[0].id                               # References the ID of the EFS created above.
 }
 
 # This resource creates a Kubernetes storage class specifically for the EFS. Storage classes define how storage is provisioned and its parameters.
 resource "kubernetes_storage_class" "efs_storage_class" {
-  count = var.enable_aws_efs_csi_driver ? 1 : 0 # Only creates the storage class if the `enable_aws_efs_csi_driver` variable is true.
+  count = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Only creates the storage class if the `enable_aws_efs_csi_driver` variable is true.
 
   metadata {
     name = var.aws_efs_csi_driver_storage_class_name # Name of the storage class.
@@ -1061,15 +1081,15 @@ resource "kubernetes_storage_class" "efs_storage_class" {
 
 # This resource installs the AWS EFS CSI driver using Helm, a package manager for Kubernetes.
 resource "helm_release" "aws-efs-csi-driver" {
-  count           = var.enable_aws_efs_csi_driver ? 1 : 0                   # Only installs the Helm chart if the `enable_aws_efs_csi_driver` variable is true.
-  name            = "aws-efs-csi-driver"                                    # Name of the Helm release.
-  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/" # Helm chart repository URL.
-  chart           = "aws-efs-csi-driver"                                    # The name of the chart to install.
-  namespace       = "kube-system"                                           # Kubernetes namespace where the Helm chart will be installed.
-  replace         = true                                                    # If true, replaces the existing Helm release with the same name.
-  version         = var.aws_efs_csi_driver_version                          # Specifies the chart version to install.
-  atomic          = true                                                    # If set to true, the installation process rolls back changes in case of a failed install.
-  cleanup_on_fail = true                                                    # If set to true, removes resources and rollbacks in case of a failed installation.
+  count           = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Only installs the Helm chart if the `enable_aws_efs_csi_driver` variable is true.
+  name            = "aws-efs-csi-driver"                                            # Name of the Helm release.
+  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"         # Helm chart repository URL.
+  chart           = "aws-efs-csi-driver"                                            # The name of the chart to install.
+  namespace       = "kube-system"                                                   # Kubernetes namespace where the Helm chart will be installed.
+  replace         = true                                                            # If true, replaces the existing Helm release with the same name.
+  version         = var.aws_efs_csi_driver_version                                  # Specifies the chart version to install.
+  atomic          = true                                                            # If set to true, the installation process rolls back changes in case of a failed install.
+  cleanup_on_fail = true                                                            # If set to true, removes resources and rollbacks in case of a failed installation.
 
   set {
     name  = "controller.serviceAccount.create" # Configuration parameter for the Helm chart.
@@ -1087,8 +1107,8 @@ module "db_sg" {
   description = "Security group for access from seqera EKS cluster to seqera db" # Description of the purpose of this security group.
   vpc_id      = module.vpc.vpc_id                                                # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
-  ingress_rules       = [var.db_ingress_rule_name]             # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
+  ingress_cidr_blocks = [module.vpc.vpc_cidr_block] # Allows incoming traffic from the subnets of the VPC.
+  ingress_rules       = [var.db_ingress_rule_name]  # Specific set of ingress rules (e.g., allowing TCP port 5432 for PostgreSQL).
 
   depends_on = [module.vpc]
 }
@@ -1103,17 +1123,17 @@ module "redis_sg" {
   description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group.
   vpc_id      = module.vpc.vpc_id                                                   # The VPC ID where this security group will be created, sourced from the 'vpc' module.
 
-  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks # Allows incoming traffic from the private subnets of the VPC.
-  ingress_rules       = [var.redis_ingress_rule]               # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
+  ingress_cidr_blocks = [module.vpc.vpc_cidr_block] # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = [var.redis_ingress_rule]    # Specific set of ingress rules (e.g., allowing TCP port 6379 for Redis).
 
   depends_on = [module.vpc]
 }
 
 # This module creates a security group specifically for the AWS EFS CSI Driver.
 module "efs_sg" {
-  count   = var.enable_aws_efs_csi_driver ? 1 : 0      # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
-  version = "5.1.0"                                    # Specifies the version of the module to use.
-  source  = "terraform-aws-modules/security-group/aws" # Using a community Terraform AWS security group module.
+  count   = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  version = "5.1.0"                                                         # Specifies the version of the module to use.
+  source  = "terraform-aws-modules/security-group/aws"                      # Using a community Terraform AWS security group module.
 
   name        = var.aws_efs_csi_driver_security_group_name                          # The name of the security group, sourced from a variable.
   description = "Security group for access from seqera EKS cluster to seqera redis" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
@@ -1122,6 +1142,23 @@ module "efs_sg" {
   ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks                    # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = [var.aws_efs_csi_driver_security_group_ingress_rule_name] # Specific set of ingress rules.
   egress_cidr_blocks  = module.vpc.private_subnets_cidr_blocks                    # Allows outgoing traffic to the private subnets of the VPC.
+
+  depends_on = [module.vpc]
+}
+
+module "ec2_sg" {
+  count   = var.create_ec2_instance || var.create_ec2_spot_instance ? 1 : 0 # Creates the security group only if the 'enable_aws_efs_csi_driver' variable is set to true.
+  version = "5.1.0"                                                         # Specifies the version of the module to use.
+  source  = "terraform-aws-modules/security-group/aws"                      # Using a community Terraform AWS security group module.
+
+  name        = var.ec2_instance_security_group_name                 # The name of the security group, sourced from a variable.
+  description = "Security group for access from seqera EC2 instance" # Description of the purpose of this security group. [Note: This description seems like a typo as it mentions "redis" but is actually for "EFS".]
+  vpc_id      = module.vpc.vpc_id                                    # The VPC ID where this security group will be created, sourced from the 'vpc' module.
+
+  ingress_cidr_blocks = var.ec2_instance_sg_ingress_cidr_blocks             # Allows incoming traffic from the private subnets of the VPC.
+  ingress_rules       = var.ec2_instance_security_group_ingress_rules_names # Specific set of ingress rules.
+  egress_rules        = var.ec2_instance_secirity_group_egress_rules_names  # Specific set of egress rules.
+  egress_cidr_blocks  = var.ec2_instance_sg_egress_cidr_blocks              # Allows outgoing traffic to the private subnets of the VPC.
 
   depends_on = [module.vpc]
 }
@@ -1212,7 +1249,7 @@ module "this" {
 
   namespace = "default"
   stage     = var.environment
-  name      = var.cluster_name
+  name      = "seqera"
 }
 
 # Terraform module to provision an ElastiCache Redis Cluster.
@@ -1221,7 +1258,7 @@ module "redis" {
   version = "0.52.0"
   count   = var.create_redis_cluster ? 1 : 0
 
-  availability_zones            = var.azs
+  availability_zones            = local.azs
   vpc_id                        = module.vpc.vpc_id
   description                   = var.redis_cluster_description
   allowed_security_group_ids    = [module.eks.cluster_primary_security_group_id]
@@ -1269,25 +1306,27 @@ locals {
   aws_cluster_autoscaler_iam_policy_name      = "${var.aws_cluster_autoscaler_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_efs_csi_driver_iam_policy_name          = "${var.aws_efs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
   aws_ebs_csi_driver_iam_policy_name          = "${var.aws_ebs_csi_driver_iam_policy_name}-${var.cluster_name}-${var.region}"
+  ec2_instance_profile_iam_policy_name        = "${var.ec2_instance_profile_iam_policy_name}-${var.ec2_instance_name}-${var.region}"
+
 
   # The next set of local variables are conditional policy mappings.
   # If the respective feature is enabled (e.g., `var.enable_aws_loadbalancer_controller` is true), 
   # the policy ARN from the associated module is stored in a map. 
   # Otherwise, an empty map is returned.
 
-  aws_loadbalancer_controller_policy = var.enable_aws_loadbalancer_controller ? {
+  aws_loadbalancer_controller_policy = var.enable_aws_loadbalancer_controller && var.create_eks_cluster ? {
     aws_loadbalancer_controller_iam_policy = module.aws_loadbalancer_controller_iam_policy[0].arn
   } : {}
 
-  aws_ebs_csi_driver_policy = var.enable_aws_ebs_csi_driver ? {
+  aws_ebs_csi_driver_policy = var.enable_aws_ebs_csi_driver && var.create_eks_cluster ? {
     aws_ebs_csi_driver_iam_policy = module.aws_ebs_csi_driver_iam_policy[0].arn
   } : {}
 
-  aws_cluster_autoscaler_policy = var.enable_aws_cluster_autoscaler ? {
+  aws_cluster_autoscaler_policy = var.enable_aws_cluster_autoscaler && var.create_eks_cluster ? {
     aws_cluster_autoscaler_iam_policy = module.aws_cluster_autoscaler_iam_policy[0].arn
   } : {}
 
-  aws_efs_csi_driver_policy = var.enable_aws_efs_csi_driver ? {
+  aws_efs_csi_driver_policy = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? {
     aws_efs_csi_driver_iam_policy = module.aws_efs_csi_driver_iam_policy[0].arn
   } : {}
 
@@ -1305,8 +1344,8 @@ locals {
 # This module creates an IAM policy specifically for Seqera.
 module "seqera_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"                                  # Specifies the version of the module to use.
-  count   = var.create_seqera_service_account ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
+  version = "5.30.0"                                                            # Specifies the version of the module to use.
+  count   = var.create_seqera_service_account && var.create_eks_cluster ? 1 : 0 # Conditional creation of the IAM policy based on the variable.
 
   name        = local.seqera_irsa_iam_policy_name
   path        = "/" # The path in which the policy is created.
@@ -1320,8 +1359,8 @@ module "seqera_iam_policy" {
 # This module creates an IAM policy for the AWS Load Balancer Controller.
 module "aws_loadbalancer_controller_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"                                       # Specifies the version of the module to use.
-  count   = var.enable_aws_loadbalancer_controller ? 1 : 0 # Conditional creation based on the variable.
+  version = "5.30.0"                                                                 # Specifies the version of the module to use.
+  count   = var.enable_aws_loadbalancer_controller && var.create_eks_cluster ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_loadbalancer_controller_iam_policy_name
   path        = "/"
@@ -1335,8 +1374,8 @@ module "aws_loadbalancer_controller_iam_policy" {
 # This module creates an IAM policy for the AWS EFS CSI Driver.
 module "aws_efs_csi_driver_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"                              # Specifies the version of the module to use.
-  count   = var.enable_aws_efs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
+  version = "5.30.0"                                                        # Specifies the version of the module to use.
+  count   = var.enable_aws_efs_csi_driver && var.create_eks_cluster ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_efs_csi_driver_iam_policy_name
   path        = "/"
@@ -1350,8 +1389,8 @@ module "aws_efs_csi_driver_iam_policy" {
 # This module creates an IAM policy for the AWS Cluster Autoscaler.
 module "aws_cluster_autoscaler_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"                                  # Specifies the version of the module to use.
-  count   = var.enable_aws_cluster_autoscaler ? 1 : 0 # Conditional creation based on the variable.
+  version = "5.30.0"                                                            # Specifies the version of the module to use.
+  count   = var.enable_aws_cluster_autoscaler && var.create_eks_cluster ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_cluster_autoscaler_iam_policy_name
   path        = "/"
@@ -1365,8 +1404,8 @@ module "aws_cluster_autoscaler_iam_policy" {
 # This module creates an IAM policy for the EBS CSI Driver.
 module "aws_ebs_csi_driver_iam_policy" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.30.0"                              # Specifies the version of the module to use.
-  count   = var.enable_aws_ebs_csi_driver ? 1 : 0 # Conditional creation based on the variable.
+  version = "5.30.0"                                                        # Specifies the version of the module to use.
+  count   = var.enable_aws_ebs_csi_driver && var.create_eks_cluster ? 1 : 0 # Conditional creation based on the variable.
 
   name        = local.aws_ebs_csi_driver_iam_policy_name
   path        = "/"
@@ -1377,12 +1416,25 @@ module "aws_ebs_csi_driver_iam_policy" {
   tags = var.default_tags # Assigning default tags.
 }
 
+module "ec2_instance_profile_iam_policy" {
+  source      = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version     = "5.30.0"                                                                                                                                                        # Specifies the version of the module to use.
+  count       = var.create_ec2_instance && var.create_ec2_instance_iam_instance_profile || var.create_ec2_spot_instance && var.create_ec2_instance_iam_instance_profile ? 1 : 0 # Conditional creation based on the variable.
+  name        = local.ec2_instance_profile_iam_policy_name
+  path        = "/"
+  description = "This is the policy associated with the EC2 Instance Role."
+
+  policy = var.ec2_instance_profile_iam_policy # Policy content or document.
+
+  tags = var.default_tags # Assigning default tags.
+}
+
 # This module creates an IAM role for service accounts for Seqera.
 # Specifically, this is useful in an EKS context where a Kubernetes service account maps to an AWS IAM role.
 module "seqera_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.30.0"                                  # Specifies the version of the module to use.
-  count   = var.create_seqera_service_account ? 1 : 0 # Conditional creation based on the variable.
+  version = "5.30.0"                                                            # Specifies the version of the module to use.
+  count   = var.create_seqera_service_account && var.create_eks_cluster ? 1 : 0 # Conditional creation based on the variable.
 
   role_name = local.seqera_irsa_role_name
 
@@ -1408,4 +1460,101 @@ module "seqera_irsa" {
   tags = {
     Name = local.seqera_irsa_role_name # Assigning the role name as a tag.
   }
+}
+
+## Data to get the Ubunutu AMI ID
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+
+  owners = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+## AWS Key pair
+module "key_pair" {
+  source  = "terraform-aws-modules/key-pair/aws"
+  version = "2.0.2"
+  create  = var.create_ec2_instance && var.create_ec2_instance_local_key_pair || var.create_ec2_spot_instance && var.create_ec2_instance_local_key_pair ? true : false
+
+  key_name   = var.local_ssh_key_pair_name
+  public_key = file(var.ec2_instance_ssh_public_key_path)
+}
+
+locals {
+  vpc_endpoint_services = var.create_ec2_public_instance ? concat(var.vpc_endpoint_services, ["rds", "elasticache"]) : var.vpc_endpoint_services
+}
+
+## VPC Endpoint for SSM Session Manager
+module "vpc_endpoints" {
+  source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
+  version = "~> 5.0"
+  create  = var.enable_ec2_instance_session_manager_access && var.create_ec2_instance ? true : false
+
+  vpc_id = module.vpc.vpc_id
+
+  endpoints = { for service in toset(local.vpc_endpoint_services) :
+    replace(service, ".", "_") =>
+    {
+      service             = service
+      subnet_ids          = var.create_ec2_public_instance ? module.vpc.public_subnets : module.vpc.private_subnets
+      private_dns_enabled = true
+      tags                = var.default_tags
+    }
+  }
+
+  create_security_group      = true
+  security_group_name_prefix = "seqera-vpc-endpoints-"
+  security_group_description = "VPC endpoint security group"
+  security_group_rules = {
+    ingress_https = {
+      description = "HTTPS from subnets"
+      cidr_blocks = var.create_ec2_public_instance ? module.vpc.public_subnets_cidr_blocks : module.vpc.private_subnets_cidr_blocks
+    }
+  }
+
+  tags = var.default_tags
+  depends_on = [
+    module.vpc
+  ]
+}
+
+## EC2 Instance Module
+module "ec2_instance" {
+  source               = "terraform-aws-modules/ec2-instance/aws"
+  version              = "5.5.0"
+  create               = var.create_ec2_instance
+  create_spot_instance = var.create_ec2_spot_instance
+
+  name = var.ec2_instance_name
+
+  instance_type               = var.ec2_instance_type
+  key_name                    = var.create_ec2_instance_local_key_pair ? module.key_pair.key_pair_name : var.ec2_instance_key_name
+  monitoring                  = var.enable_ec2_instance_monitoring
+  vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
+  subnet_id                   = var.create_ec2_public_instance ? element(module.vpc.public_subnets, 0) : element(module.vpc.private_subnets, 0)
+  availability_zone           = element(module.vpc.azs, 0)
+  associate_public_ip_address = var.create_ec2_public_instance
+  ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.amazon_linux_2.id
+  create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
+  get_password_data           = var.get_ec2_instance_password_data
+  iam_role_description        = var.ec2_instance_iam_role_description
+  iam_role_name               = var.ec2_instance_iam_role_name
+  iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
+  iam_role_tags               = var.default_tags
+  ignore_ami_changes          = var.ignore_ec2_instance_ami_changes
+
+  root_block_device = var.ec2_instance_root_block_device
+  ebs_block_device  = var.ebs_block_device
+
+  # Default tags for VPC resources.
+  tags = var.default_tags
+
+  depends_on = [
+    module.vpc,
+    module.db
+  ]
 }

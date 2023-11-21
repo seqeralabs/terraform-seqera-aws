@@ -30,3 +30,12 @@ output "seqera_irsa_role_name" {
   description = "IAM role name associated with Seqera IRSA (IAM Roles for Service Accounts)."
 }
 
+output "ec2_instance_id" {
+  value       = try(module.ec2_instance.id, null)
+  description = "EC2 instance ID."
+}
+
+output "ec2_instance_public_dns_name" {
+  value       = try(module.ec2_instance.public_dns, null)
+  description = "EC2 instance public DNS name."
+}

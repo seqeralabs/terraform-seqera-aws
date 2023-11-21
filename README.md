@@ -7,34 +7,24 @@
 * [Security-Group](https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/latest): Sets up a security group for access from the EKS cluster to the database.
 * [RDS](https://registry.terraform.io/modules/terraform-aws-modules/rds/aws/latest): Deploys an Amazon RDS database instance.
 * [Elasticache-Redis](https://registry.terraform.io/modules/cloudposse/elasticache-redis/aws/latest): Creates a Redis MemoryDB cluster.
+* [EC2](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws/latest): Creates en EC2 instance
 
 ## Prerequisites
 Before running this Terraform code, ensure you have the following prerequisites in place:
-
-AWS CLI installed and configured with appropriate access credentials.
-Terraform CLI installed on your local machine.
+Terraform CLI is installed on your local machine.
 
 ## Usage
 Follow the steps below to deploy the infrastructure:
 
-Example:
+Example EKS cluster:
 ```hcl
 ## Module
-module "terraform-seqera-module" {
-  source  = "github.com/seqeralabs/terraform-seqera-module"
-  aws_profile = "my-aws-profile"
+module "terraform-seqera-aws" {
+  source  = "github.com/seqeralabs/terraform-seqera-aws"
   region  = "eu-west-2"
 
   ## VPC
   vpc_name = "my-seqera-tf-vpc"
-  vpc_cidr = "10.0.0.0/16"
-
-  azs                 = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
-  private_subnets     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets      = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  database_subnets    = ["10.0.104.0/24", "10.0.105.0/24", "10.0.106.0/24"]
-  elasticache_subnets = ["10.0.107.0/24", "10.0.108.0/24", "10.0.109.0/24"]
-  intra_subnets       = ["10.0.110.0/24", "10.0.111.0/24", "10.0.112.0/24"]
 
   ## EKS
   cluster_name    = "my-seqera-tf-cluster"
@@ -58,17 +48,159 @@ module "terraform-seqera-module" {
 
 ## Outputs
 output "database_url" {
-  value = module.terraform-seqera-module.database_url
+  value = module.terraform-seqera-aws.database_url
 }
 
 output "redis_url" {
-  value = module.terraform-seqera-module.redis_url
+  value = module.terraform-seqera-aws.redis_url
 }
 
 output "seqera_irsa_role_name" {
-  value = module.terraform-seqera-module.seqera_irsa_role_name
+  value = module.terraform-seqera-aws.seqera_irsa_role_name
 }
 ```
+
+## Example of public EC2 instance with your local SSH public key `main.tf`
+```hcl
+module "terraform-seqera-aws" {
+  source  = "github.com/seqeralabs/terraform-seqera-aws"
+  region  = "eu-west-2"
+
+  ## VPC
+  vpc_name = "seqera-vpc"
+
+  ## EC2 Instance
+  create_ec2_instance = true
+  create_ec2_instance_local_key_pair = true
+  create_ec2_public_instance = true
+
+  default_tags = {
+    Environment = "development"
+    ManagedBy   = "Terraform"
+    Product     = "Seqera"
+    CreatedBy   = "DevOps"
+  }
+}
+
+output "database_url" {
+  value = module.terraform-seqera-aws.database_url
+}
+
+output "redis_url" {
+  value = module.terraform-seqera-aws.redis_url
+}
+
+output "ec2_instance_public_dns_name" {
+  value = module.terraform-seqera-module.ec2_instance_public_dns_name
+}
+```
+
+Note: To connect to the EC2 instance use the following syntax `ssh ec2-user@<EC2 Instance Public DNS Name>`
+
+## Example of public EC2 instance with existing AWS key pair `main.tf`
+```hcl
+module "terraform-seqera-aws" {
+  source  = "github.com/seqeralabs/terraform-seqera-aws"
+  region  = "eu-west-2"
+
+  ## VPC
+  vpc_name = "seqera-vpc"
+
+  ## EC2 Instance
+  create_ec2_instance = true
+  ec2_instance_key_name = "my-key-pair"
+  create_ec2_public_instance = true
+
+  default_tags = {
+    Environment = "development"
+    ManagedBy   = "Terraform"
+    Product     = "Seqera"
+    CreatedBy   = "DevOps"
+  }
+}
+
+output "database_url" {
+  value = module.terraform-seqera-aws.database_url
+}
+
+output "redis_url" {
+  value = module.terraform-seqera-aws.redis_url
+}
+
+output "ec2_instance_public_dns_name" {
+  value = module.terraform-seqera-module.ec2_instance_public_dns_name
+}
+```
+
+## Example of private EC2 instance
+```hcl
+module "terraform-seqera-aws" {
+  source  = "github.com/seqeralabs/terraform-seqera-aws"
+  region  = "eu-west-2"
+
+  ## VPC
+  vpc_name = "seqera-vpc"
+
+  ## EC2 Instance
+  create_ec2_instance = true
+  enable_ec2_instance_session_manager_access = true
+
+  default_tags = {
+    Environment = "development"
+    ManagedBy   = "Terraform"
+    Product     = "Seqera"
+    CreatedBy   = "DevOps"
+  }
+}
+
+output "database_url" {
+  value = module.terraform-seqera-aws.database_url
+}
+
+output "redis_url" {
+  value = module.terraform-seqera-aws.redis_url
+}
+
+output "ec2_instance_id" {
+  value = module.terraform-seqera-module.ec2_instance_id
+}
+```
+
+Note: *To connect to the private EC2 instance, you will need to use the `aws ssm` plugin. the syntax is `aws ssm start-session --target <EC2 Instance ID>`*
+
+## Example of public EC2 instance with secure SSM Session Manager access `main.tf`
+```hcl
+module "terraform-seqera-aws" {
+  source  = "github.com/seqeralabs/terraform-seqera-aws"
+  region  = "eu-west-2"
+
+  ## VPC
+  vpc_name = "seqera-vpc"
+
+  ## EC2 Instance
+  create_ec2_instance = true
+  enable_ec2_instance_session_manager_access = true
+  create_ec2_public_instance = true
+  ec2_instance_security_group_ingress_rules_names = ["http-80-tcp", "https-443-tcp"]
+
+  default_tags = {
+    Environment = "development"
+    ManagedBy   = "Terraform"
+    Product     = "Seqera"
+    CreatedBy   = "DevOps"
+  }
+}
+
+output "database_url" {
+  value = module.terraform-seqera-aws.database_url
+}
+
+output "redis_url" {
+  value = module.terraform-seqera-aws.redis_url
+}
+```
+
+Note: *To connect to the private EC2 instance, you will need to use the `aws ssm` plugin. the syntax is `aws ssm start-session --target <EC2 Instance ID>`*
 
 1. Clone this repository to your local machine.
 2. Navigate to the project directory.
@@ -134,14 +266,19 @@ This Terraform code is licensed under the Apache License
 | <a name="module_aws_loadbalancer_controller_iam_policy"></a> [aws\_loadbalancer\_controller\_iam\_policy](#module\_aws\_loadbalancer\_controller\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_db"></a> [db](#module\_db) | terraform-aws-modules/rds/aws | 6.1.1 |
 | <a name="module_db_sg"></a> [db\_sg](#module\_db\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
+| <a name="module_ec2_instance"></a> [ec2\_instance](#module\_ec2\_instance) | terraform-aws-modules/ec2-instance/aws | 5.5.0 |
+| <a name="module_ec2_instance_profile_iam_policy"></a> [ec2\_instance\_profile\_iam\_policy](#module\_ec2\_instance\_profile\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
+| <a name="module_ec2_sg"></a> [ec2\_sg](#module\_ec2\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.19.0 |
+| <a name="module_key_pair"></a> [key\_pair](#module\_key\_pair) | terraform-aws-modules/key-pair/aws | 2.0.2 |
 | <a name="module_redis"></a> [redis](#module\_redis) | cloudposse/elasticache-redis/aws | 0.52.0 |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_seqera_irsa"></a> [seqera\_irsa](#module\_seqera\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | 5.30.0 |
 | <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 5.1.2 |
+| <a name="module_vpc_endpoints"></a> [vpc\_endpoints](#module\_vpc\_endpoints) | terraform-aws-modules/vpc/aws//modules/vpc-endpoints | ~> 5.0 |
 
 ## Resources
 
@@ -164,6 +301,8 @@ This Terraform code is licensed under the Apache License
 | [kubernetes_storage_class.efs_storage_class](https://registry.terraform.io/providers/hashicorp/kubernetes/2.23.0/docs/resources/storage_class) | resource |
 | [random_password.db_app_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
 | [random_password.db_root_password](https://registry.terraform.io/providers/hashicorp/random/3.5.1/docs/resources/password) | resource |
+| [aws_ami.amazon_linux_2](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/ami) | data source |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/availability_zones) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/caller_identity) | data source |
 | [aws_eks_cluster_auth.this](https://registry.terraform.io/providers/hashicorp/aws/5.0.0/docs/data-sources/eks_cluster_auth) | data source |
 
@@ -171,15 +310,8 @@ This Terraform code is licensed under the Apache License
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_azs"></a> [azs](#input\_azs) | A list of Availability Zones in the selected region. | `list(string)` | n/a | yes |
-| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster. | `string` | n/a | yes |
-| <a name="input_database_subnets"></a> [database\_subnets](#input\_database\_subnets) | A list of subnet IDs for database subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_elasticache_subnets"></a> [elasticache\_subnets](#input\_elasticache\_subnets) | A list of subnet IDs for Elasticache subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_intra_subnets"></a> [intra\_subnets](#input\_intra\_subnets) | A list of subnet IDs for intra subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | A list of subnet IDs for private subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | A list of subnet IDs for public subnets within the VPC. | `list(string)` | n/a | yes |
-| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | The CIDR block for the VPC. | `string` | n/a | yes |
 | <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | The name of the Virtual Private Cloud (VPC) to be created. | `string` | n/a | yes |
+| <a name="input_alb_name"></a> [alb\_name](#input\_alb\_name) | The name of the load balancer. | `string` | `"seqera-alb"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#input\_aws\_cluster\_autoscaler\_iam\_policy) | IAM policy for the AWS Cluster Autoscaler | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:DescribeAutoScalingGroups\",\n        \"autoscaling:DescribeAutoScalingInstances\",\n        \"autoscaling:DescribeLaunchConfigurations\",\n        \"autoscaling:DescribeScalingActivities\",\n        \"autoscaling:DescribeTags\",\n        \"ec2:DescribeInstanceTypes\",\n        \"ec2:DescribeLaunchTemplateVersions\"\n      ],\n      \"Resource\": [\"*\"]\n    },\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:SetDesiredCapacity\",\n        \"autoscaling:TerminateInstanceInAutoScalingGroup\",\n        \"ec2:DescribeImages\",\n        \"ec2:GetInstanceTypesFromInstanceRequirements\",\n        \"eks:DescribeNodegroup\"\n      ],\n      \"Resource\": [\"*\"]\n    }\n  ]\n}\n"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy_name"></a> [aws\_cluster\_autoscaler\_iam\_policy\_name](#input\_aws\_cluster\_autoscaler\_iam\_policy\_name) | The name of the IAM policy for the AWS Cluster Autoscaler. | `string` | `"aws-cluster-autoscaler-iam-policy"` | no |
 | <a name="input_aws_cluster_autoscaler_version"></a> [aws\_cluster\_autoscaler\_version](#input\_aws\_cluster\_autoscaler\_version) | The version of the AWS Cluster Autoscaler to deploy. | `string` | `"9.29.3"` | no |
@@ -201,12 +333,20 @@ This Terraform code is licensed under the Apache License
 | <a name="input_aws_loadbalancer_controller_iam_policy"></a> [aws\_loadbalancer\_controller\_iam\_policy](#input\_aws\_loadbalancer\_controller\_iam\_policy) | IAM policy for the AWS LoadBalancer Controller | `string` | `"{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"iam:CreateServiceLinkedRole\"\n            ],\n            \"Resource\": \"*\",\n            \"Condition\": {\n                \"StringEquals\": {\n                    \"iam:AWSServiceName\": \"elasticloadbalancing.amazonaws.com\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:DescribeAccountAttributes\",\n                \"ec2:DescribeAddresses\",\n                \"ec2:DescribeAvailabilityZones\",\n                \"ec2:DescribeInternetGateways\",\n                \"ec2:DescribeVpcs\",\n                \"ec2:DescribeVpcPeeringConnections\",\n                \"ec2:DescribeSubnets\",\n                \"ec2:DescribeSecurityGroups\",\n                \"ec2:DescribeInstances\",\n                \"ec2:DescribeNetworkInterfaces\",\n                \"ec2:DescribeTags\",\n                \"ec2:GetCoipPoolUsage\",\n                \"ec2:DescribeCoipPools\",\n                \"elasticloadbalancing:DescribeLoadBalancers\",\n                \"elasticloadbalancing:DescribeLoadBalancerAttributes\",\n                \"elasticloadbalancing:DescribeListeners\",\n                \"elasticloadbalancing:DescribeListenerCertificates\",\n                \"elasticloadbalancing:DescribeSSLPolicies\",\n                \"elasticloadbalancing:DescribeRules\",\n                \"elasticloadbalancing:DescribeTargetGroups\",\n                \"elasticloadbalancing:DescribeTargetGroupAttributes\",\n                \"elasticloadbalancing:DescribeTargetHealth\",\n                \"elasticloadbalancing:DescribeTags\"\n            ],\n            \"Resource\": \"*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"cognito-idp:DescribeUserPoolClient\",\n                \"acm:ListCertificates\",\n                \"acm:DescribeCertificate\",\n                \"iam:ListServerCertificates\",\n                \"iam:GetServerCertificate\",\n                \"waf-regional:GetWebACL\",\n                \"waf-regional:GetWebACLForResource\",\n                \"waf-regional:AssociateWebACL\",\n                \"waf-regional:DisassociateWebACL\",\n                \"wafv2:GetWebACL\",\n                \"wafv2:GetWebACLForResource\",\n                \"wafv2:AssociateWebACL\",\n                \"wafv2:DisassociateWebACL\",\n                \"shield:GetSubscriptionState\",\n                \"shield:DescribeProtection\",\n                \"shield:CreateProtection\",\n                \"shield:DeleteProtection\"\n            ],\n            \"Resource\": \"*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:AuthorizeSecurityGroupIngress\",\n                \"ec2:RevokeSecurityGroupIngress\"\n            ],\n            \"Resource\": \"*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:CreateSecurityGroup\"\n            ],\n            \"Resource\": \"*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:CreateTags\"\n            ],\n            \"Resource\": \"arn:aws:ec2:*:*:security-group/*\",\n            \"Condition\": {\n                \"StringEquals\": {\n                    \"ec2:CreateAction\": \"CreateSecurityGroup\"\n                },\n                \"Null\": {\n                    \"aws:RequestTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:CreateTags\",\n                \"ec2:DeleteTags\"\n            ],\n            \"Resource\": \"arn:aws:ec2:*:*:security-group/*\",\n            \"Condition\": {\n                \"Null\": {\n                    \"aws:RequestTag/elbv2.k8s.aws/cluster\": \"true\",\n                    \"aws:ResourceTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"ec2:AuthorizeSecurityGroupIngress\",\n                \"ec2:RevokeSecurityGroupIngress\",\n                \"ec2:DeleteSecurityGroup\"\n            ],\n            \"Resource\": \"*\",\n            \"Condition\": {\n                \"Null\": {\n                    \"aws:ResourceTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:CreateLoadBalancer\",\n                \"elasticloadbalancing:CreateTargetGroup\"\n            ],\n            \"Resource\": \"*\",\n            \"Condition\": {\n                \"Null\": {\n                    \"aws:RequestTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:CreateListener\",\n                \"elasticloadbalancing:DeleteListener\",\n                \"elasticloadbalancing:CreateRule\",\n                \"elasticloadbalancing:DeleteRule\"\n            ],\n            \"Resource\": \"*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:AddTags\",\n                \"elasticloadbalancing:RemoveTags\"\n            ],\n            \"Resource\": [\n                \"arn:aws:elasticloadbalancing:*:*:targetgroup/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*\"\n            ],\n            \"Condition\": {\n                \"Null\": {\n                    \"aws:RequestTag/elbv2.k8s.aws/cluster\": \"true\",\n                    \"aws:ResourceTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:AddTags\",\n                \"elasticloadbalancing:RemoveTags\"\n            ],\n            \"Resource\": [\n                \"arn:aws:elasticloadbalancing:*:*:listener/net/*/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:listener/app/*/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:listener-rule/net/*/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:listener-rule/app/*/*/*\"\n            ]\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:ModifyLoadBalancerAttributes\",\n                \"elasticloadbalancing:SetIpAddressType\",\n                \"elasticloadbalancing:SetSecurityGroups\",\n                \"elasticloadbalancing:SetSubnets\",\n                \"elasticloadbalancing:DeleteLoadBalancer\",\n                \"elasticloadbalancing:ModifyTargetGroup\",\n                \"elasticloadbalancing:ModifyTargetGroupAttributes\",\n                \"elasticloadbalancing:DeleteTargetGroup\"\n            ],\n            \"Resource\": \"*\",\n            \"Condition\": {\n                \"Null\": {\n                    \"aws:ResourceTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:AddTags\"\n            ],\n            \"Resource\": [\n                \"arn:aws:elasticloadbalancing:*:*:targetgroup/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*\",\n                \"arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*\"\n            ],\n            \"Condition\": {\n                \"StringEquals\": {\n                    \"elasticloadbalancing:CreateAction\": [\n                        \"CreateTargetGroup\",\n                        \"CreateLoadBalancer\"\n                    ]\n                },\n                \"Null\": {\n                    \"aws:RequestTag/elbv2.k8s.aws/cluster\": \"false\"\n                }\n            }\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:RegisterTargets\",\n                \"elasticloadbalancing:DeregisterTargets\"\n            ],\n            \"Resource\": \"arn:aws:elasticloadbalancing:*:*:targetgroup/*/*\"\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"elasticloadbalancing:SetWebAcl\",\n                \"elasticloadbalancing:ModifyListener\",\n                \"elasticloadbalancing:AddListenerCertificates\",\n                \"elasticloadbalancing:RemoveListenerCertificates\",\n                \"elasticloadbalancing:ModifyRule\"\n            ],\n            \"Resource\": \"*\"\n        }\n    ]\n}\n\n"` | no |
 | <a name="input_aws_loadbalancer_controller_iam_policy_name"></a> [aws\_loadbalancer\_controller\_iam\_policy\_name](#input\_aws\_loadbalancer\_controller\_iam\_policy\_name) | The name of the IAM policy for the AWS LoadBalancer Controller | `string` | `"aws-loadbalancer-controller-iam-policy"` | no |
 | <a name="input_aws_loadbalancer_controller_version"></a> [aws\_loadbalancer\_controller\_version](#input\_aws\_loadbalancer\_controller\_version) | The version of the AWS LoadBalancer Controller to deploy | `string` | `"1.6.0"` | no |
-| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | The AWS profile used for authentication when interacting with AWS resources. | `string` | `"default"` | no |
+| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster. | `string` | `"seqera"` | no |
 | <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | The version of Kubernetes to use for the EKS cluster. | `string` | `"1.27"` | no |
+| <a name="input_create_alb"></a> [create\_alb](#input\_create\_alb) | Determines whether to create an Application Load Balancer. | `bool` | `false` | no |
 | <a name="input_create_database_subnet_group"></a> [create\_database\_subnet\_group](#input\_create\_database\_subnet\_group) | Determines whether a database subnet group should be created. | `bool` | `true` | no |
 | <a name="input_create_database_subnet_route_table"></a> [create\_database\_subnet\_route\_table](#input\_create\_database\_subnet\_route\_table) | Determines whether a subnet route table should be created for the database subnets. | `bool` | `true` | no |
 | <a name="input_create_db_cluster"></a> [create\_db\_cluster](#input\_create\_db\_cluster) | Determines whether the database cluster should be created. | `bool` | `true` | no |
 | <a name="input_create_db_password_secret"></a> [create\_db\_password\_secret](#input\_create\_db\_password\_secret) | Determines whether a secret should be created for the database password. | `bool` | `true` | no |
+| <a name="input_create_ec2_instance"></a> [create\_ec2\_instance](#input\_create\_ec2\_instance) | Determines whether to create an EC2 instance. | `bool` | `false` | no |
+| <a name="input_create_ec2_instance_iam_instance_profile"></a> [create\_ec2\_instance\_iam\_instance\_profile](#input\_create\_ec2\_instance\_iam\_instance\_profile) | Determines whether to create an IAM instance profile for the EC2 instance. | `bool` | `true` | no |
+| <a name="input_create_ec2_instance_local_key_pair"></a> [create\_ec2\_instance\_local\_key\_pair](#input\_create\_ec2\_instance\_local\_key\_pair) | Determines whether to create a local SSH key pair for the EC2 instance. | `bool` | `false` | no |
+| <a name="input_create_ec2_public_instance"></a> [create\_ec2\_public\_instance](#input\_create\_ec2\_public\_instance) | Determines whether to create a public EC2 instance. | `bool` | `false` | no |
+| <a name="input_create_ec2_spot_instance"></a> [create\_ec2\_spot\_instance](#input\_create\_ec2\_spot\_instance) | Determines whether to create an EC2 spot instance. | `bool` | `false` | no |
+| <a name="input_create_eks_cluster"></a> [create\_eks\_cluster](#input\_create\_eks\_cluster) | Determines whether an EKS cluster should be created. | `bool` | `false` | no |
+| <a name="input_create_public_alb"></a> [create\_public\_alb](#input\_create\_public\_alb) | Determines whether to create a public load balancer. | `bool` | `true` | no |
 | <a name="input_create_redis_cluster"></a> [create\_redis\_cluster](#input\_create\_redis\_cluster) | Determines whether to create a Redis cluster. | `bool` | `true` | no |
 | <a name="input_create_seqera_namespace"></a> [create\_seqera\_namespace](#input\_create\_seqera\_namespace) | Determines whether to create the Seqera namespace. | `bool` | `true` | no |
 | <a name="input_create_seqera_service_account"></a> [create\_seqera\_service\_account](#input\_create\_seqera\_service\_account) | Determines whether to create the Seqera service account. | `bool` | `true` | no |
@@ -240,6 +380,23 @@ This Terraform code is licensed under the Apache License
 | <a name="input_db_setup_job_name"></a> [db\_setup\_job\_name](#input\_db\_setup\_job\_name) | The name of the database setup job. | `string` | `"seqera-db-setup-job"` | no |
 | <a name="input_db_skip_final_snapshot"></a> [db\_skip\_final\_snapshot](#input\_db\_skip\_final\_snapshot) | Determines whether a final snapshot should be created when the database is deleted. | `bool` | `true` | no |
 | <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to the provisioned resources. | `map(string)` | <pre>{<br>  "ManagedBy": "Terraform",<br>  "Product": "SeqeraPlatform"<br>}</pre> | no |
+| <a name="input_ebs_block_device"></a> [ebs\_block\_device](#input\_ebs\_block\_device) | The list of EBS block devices for the EC2 instance. | `list(any)` | <pre>[<br>  {<br>    "device_name": "/dev/sdx",<br>    "volume_size": 100,<br>    "volume_type": "gp3"<br>  }<br>]</pre> | no |
+| <a name="input_ec2_instance_ami_id"></a> [ec2\_instance\_ami\_id](#input\_ec2\_instance\_ami\_id) | The ID of the AMI for the EC2 instance. | `string` | `""` | no |
+| <a name="input_ec2_instance_iam_role_description"></a> [ec2\_instance\_iam\_role\_description](#input\_ec2\_instance\_iam\_role\_description) | The description of the IAM role for the EC2 instance. | `string` | `"Seqera Forge IAM role"` | no |
+| <a name="input_ec2_instance_iam_role_name"></a> [ec2\_instance\_iam\_role\_name](#input\_ec2\_instance\_iam\_role\_name) | The name of the IAM role for the EC2 instance. | `string` | `"seqera-forge-role"` | no |
+| <a name="input_ec2_instance_key_name"></a> [ec2\_instance\_key\_name](#input\_ec2\_instance\_key\_name) | The name of the key pair for the EC2 instance. | `string` | `null` | no |
+| <a name="input_ec2_instance_name"></a> [ec2\_instance\_name](#input\_ec2\_instance\_name) | The name of the EC2 instance. | `string` | `"seqera-ec2-instance"` | no |
+| <a name="input_ec2_instance_profile_iam_policy"></a> [ec2\_instance\_profile\_iam\_policy](#input\_ec2\_instance\_profile\_iam\_policy) | IAM policy for the EC2 instance profile | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n      {\n          \"Sid\": \"TowerForge0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"ssm:GetParameters\",\n              \"iam:CreateInstanceProfile\",\n              \"iam:DeleteInstanceProfile\",\n              \"iam:GetRole\",\n              \"iam:RemoveRoleFromInstanceProfile\",\n              \"iam:CreateRole\",\n              \"iam:DeleteRole\",\n              \"iam:AttachRolePolicy\",\n              \"iam:PutRolePolicy\",\n              \"iam:AddRoleToInstanceProfile\",\n              \"iam:PassRole\",\n              \"iam:DetachRolePolicy\",\n              \"iam:ListAttachedRolePolicies\",\n              \"iam:DeleteRolePolicy\",\n              \"iam:ListRolePolicies\",\n              \"iam:TagRole\",\n              \"iam:TagInstanceProfile\",\n              \"batch:CreateComputeEnvironment\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:CreateJobQueue\",\n              \"batch:DescribeJobQueues\",\n              \"batch:UpdateComputeEnvironment\",\n              \"batch:DeleteComputeEnvironment\",\n              \"batch:UpdateJobQueue\",\n              \"batch:DeleteJobQueue\",\n              \"fsx:DeleteFileSystem\",\n              \"fsx:DescribeFileSystems\",\n              \"fsx:CreateFileSystem\",\n              \"fsx:TagResource\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeLaunchTemplates\",\n              \"ec2:DescribeLaunchTemplateVersions\", \n              \"ec2:CreateLaunchTemplate\",\n              \"ec2:DeleteLaunchTemplate\",\n              \"ec2:DescribeKeyPairs\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeInstanceTypeOfferings\",\n              \"ec2:GetEbsEncryptionByDefault\",\n              \"elasticfilesystem:DescribeMountTargets\",\n              \"elasticfilesystem:CreateMountTarget\",\n              \"elasticfilesystem:CreateFileSystem\",\n              \"elasticfilesystem:DescribeFileSystems\",\n              \"elasticfilesystem:DeleteMountTarget\",\n              \"elasticfilesystem:DeleteFileSystem\",\n              \"elasticfilesystem:UpdateFileSystem\",\n              \"elasticfilesystem:PutLifecycleConfiguration\",\n              \"elasticfilesystem:TagResource\"\n          ],\n          \"Resource\": \"*\"\n      },\n      {\n          \"Sid\": \"TowerLaunch0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"s3:Get*\",\n              \"s3:List*\",\n              \"batch:DescribeJobQueues\",\n              \"batch:CancelJob\",\n              \"batch:SubmitJob\",\n              \"batch:ListJobs\",\n              \"batch:TagResource\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:TerminateJob\",\n              \"batch:DescribeJobs\",\n              \"batch:RegisterJobDefinition\",\n              \"batch:DescribeJobDefinitions\",\n              \"ecs:DescribeTasks\",\n              \"ec2:DescribeInstances\",\n              \"ec2:DescribeInstanceTypes\",\n              \"ec2:DescribeInstanceAttribute\",\n              \"ecs:DescribeContainerInstances\",\n              \"ec2:DescribeInstanceStatus\",\n              \"ec2:DescribeImages\",\n              \"logs:Describe*\",\n              \"logs:Get*\",\n              \"logs:List*\",\n              \"logs:StartQuery\",\n              \"logs:StopQuery\",\n              \"logs:TestMetricFilter\",\n              \"logs:FilterLogEvents\",\n              \"ses:SendRawEmail\"\n          ],\n          \"Resource\": \"*\"\n      }\n  ]\n}\n"` | no |
+| <a name="input_ec2_instance_profile_iam_policy_name"></a> [ec2\_instance\_profile\_iam\_policy\_name](#input\_ec2\_instance\_profile\_iam\_policy\_name) | The name of the IAM policy for the EC2 instance profile. | `string` | `"seqera-forge-policy"` | no |
+| <a name="input_ec2_instance_root_block_device"></a> [ec2\_instance\_root\_block\_device](#input\_ec2\_instance\_root\_block\_device) | The root block device for the EC2 instance. | `list(any)` | <pre>[<br>  {<br>    "volume_size": 100,<br>    "volume_type": "gp3"<br>  }<br>]</pre> | no |
+| <a name="input_ec2_instance_secirity_group_egress_rules_names"></a> [ec2\_instance\_secirity\_group\_egress\_rules\_names](#input\_ec2\_instance\_secirity\_group\_egress\_rules\_names) | The names of the security group egress rules. | `list(string)` | <pre>[<br>  "all-all"<br>]</pre> | no |
+| <a name="input_ec2_instance_security_group_ingress_rules_names"></a> [ec2\_instance\_security\_group\_ingress\_rules\_names](#input\_ec2\_instance\_security\_group\_ingress\_rules\_names) | The names of the security group ingress rules. | `list(string)` | <pre>[<br>  "http-80-tcp",<br>  "https-443-tcp",<br>  "ssh-tcp",<br>  "kubernetes-api-tcp"<br>]</pre> | no |
+| <a name="input_ec2_instance_security_group_name"></a> [ec2\_instance\_security\_group\_name](#input\_ec2\_instance\_security\_group\_name) | The name of the security group for the EC2 instance. | `string` | `"seqera-forge-security-group"` | no |
+| <a name="input_ec2_instance_sg_egress_cidr_blocks"></a> [ec2\_instance\_sg\_egress\_cidr\_blocks](#input\_ec2\_instance\_sg\_egress\_cidr\_blocks) | The CIDR blocks for the security group egress rule. | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
+| <a name="input_ec2_instance_sg_ingress_cidr_blocks"></a> [ec2\_instance\_sg\_ingress\_cidr\_blocks](#input\_ec2\_instance\_sg\_ingress\_cidr\_blocks) | The CIDR blocks for the security group ingress rule. | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
+| <a name="input_ec2_instance_ssh_public_key_path"></a> [ec2\_instance\_ssh\_public\_key\_path](#input\_ec2\_instance\_ssh\_public\_key\_path) | The path to the public key for the EC2 instance. | `string` | `"~/.ssh/id_rsa.pub"` | no |
+| <a name="input_ec2_instance_type"></a> [ec2\_instance\_type](#input\_ec2\_instance\_type) | The type of the EC2 instance. | `string` | `"m5a.2xlarge"` | no |
+| <a name="input_ec2_instance_user_data_replace_on_change"></a> [ec2\_instance\_user\_data\_replace\_on\_change](#input\_ec2\_instance\_user\_data\_replace\_on\_change) | Determines whether the EC2 instance user data should be replaced on change. | `bool` | `true` | no |
 | <a name="input_eks_aws_auth_roles"></a> [eks\_aws\_auth\_roles](#input\_eks\_aws\_auth\_roles) | List of roles ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_aws_auth_users"></a> [eks\_aws\_auth\_users](#input\_eks\_aws\_auth\_users) | List of users ARNs to add to the aws-auth config map | `list(string)` | `[]` | no |
 | <a name="input_eks_cluster_addons"></a> [eks\_cluster\_addons](#input\_eks\_cluster\_addons) | Addons to be enabled for the EKS cluster. | <pre>map(object({<br>    most_recent = bool<br>  }))</pre> | <pre>{<br>  "coredns": {<br>    "most_recent": true<br>  },<br>  "kube-proxy": {<br>    "most_recent": true<br>  },<br>  "vpc-cni": {<br>    "most_recent": true<br>  }<br>}</pre> | no |
@@ -254,10 +411,18 @@ This Terraform code is licensed under the Apache License
 | <a name="input_enable_aws_loadbalancer_controller"></a> [enable\_aws\_loadbalancer\_controller](#input\_enable\_aws\_loadbalancer\_controller) | Determines whether the AWS LoadBalancer Controller should be deployed. | `bool` | `true` | no |
 | <a name="input_enable_dns_hostnames"></a> [enable\_dns\_hostnames](#input\_enable\_dns\_hostnames) | Determines whether instances in the VPC receive DNS hostnames. | `bool` | `true` | no |
 | <a name="input_enable_dns_support"></a> [enable\_dns\_support](#input\_enable\_dns\_support) | Determines whether DNS resolution is supported for the VPC. | `bool` | `true` | no |
+| <a name="input_enable_ec2_instance_monitoring"></a> [enable\_ec2\_instance\_monitoring](#input\_enable\_ec2\_instance\_monitoring) | Determines whether detailed monitoring is enabled for the EC2 instance. | `bool` | `true` | no |
+| <a name="input_enable_ec2_instance_session_manager_access"></a> [enable\_ec2\_instance\_session\_manager\_access](#input\_enable\_ec2\_instance\_session\_manager\_access) | Determines whether SSM Session Manager access is enabled for the EC2 instance. | `bool` | `false` | no |
 | <a name="input_enable_nat_gateway"></a> [enable\_nat\_gateway](#input\_enable\_nat\_gateway) | Determines whether NAT gateways should be provisioned. | `bool` | `true` | no |
 | <a name="input_enable_vpn_gateway"></a> [enable\_vpn\_gateway](#input\_enable\_vpn\_gateway) | Determines whether a VPN gateway should be provisioned. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the infrastructure is being deployed. | `string` | `""` | no |
+| <a name="input_get_ec2_instance_password_data"></a> [get\_ec2\_instance\_password\_data](#input\_get\_ec2\_instance\_password\_data) | Determines whether to get the password data for the EC2 instance. | `bool` | `false` | no |
+| <a name="input_ignore_ec2_instance_ami_changes"></a> [ignore\_ec2\_instance\_ami\_changes](#input\_ignore\_ec2\_instance\_ami\_changes) | Determines whether to ignore AMI changes for the EC2 instance. | `bool` | `true` | no |
+| <a name="input_local_ssh_key_pair_name"></a> [local\_ssh\_key\_pair\_name](#input\_local\_ssh\_key\_pair\_name) | The name of the local SSH key pair. | `string` | `"local-key-pair"` | no |
+| <a name="input_num_azs"></a> [num\_azs](#input\_num\_azs) | The number of Availability Zones to use for the VPC. | `number` | `2` | no |
 | <a name="input_one_nat_gateway_per_az"></a> [one\_nat\_gateway\_per\_az](#input\_one\_nat\_gateway\_per\_az) | Determines whether each Availability Zone should have a dedicated NAT gateway. | `bool` | `true` | no |
+| <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | A list of subnet IDs for private subnets within the VPC. | `list(string)` | `[]` | no |
+| <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | A list of subnet IDs for public subnets within the VPC. | `list(string)` | `[]` | no |
 | <a name="input_redis_apply_immediately"></a> [redis\_apply\_immediately](#input\_redis\_apply\_immediately) | Determines whether changes should be applied immediately for Redis. | `bool` | `true` | no |
 | <a name="input_redis_at_rest_encryption_enabled"></a> [redis\_at\_rest\_encryption\_enabled](#input\_redis\_at\_rest\_encryption\_enabled) | Determines whether encryption at rest is enabled for Redis. | `bool` | `false` | no |
 | <a name="input_redis_auto_minor_version_upgrade"></a> [redis\_auto\_minor\_version\_upgrade](#input\_redis\_auto\_minor\_version\_upgrade) | Determines whether automatic minor version upgrades are enabled for Redis. | `bool` | `false` | no |
@@ -293,11 +458,15 @@ This Terraform code is licensed under the Apache License
 | <a name="input_seqera_platform_service_account_iam_policy"></a> [seqera\_platform\_service\_account\_iam\_policy](#input\_seqera\_platform\_service\_account\_iam\_policy) | IAM policy for the Seqera service account | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n      {\n          \"Sid\": \"TowerForge0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"ssm:GetParameters\",\n              \"ses:SendRawEmail\",\n              \"iam:CreateInstanceProfile\",\n              \"iam:DeleteInstanceProfile\",\n              \"iam:GetRole\",\n              \"iam:RemoveRoleFromInstanceProfile\",\n              \"iam:CreateRole\",\n              \"iam:DeleteRole\",\n              \"iam:AttachRolePolicy\",\n              \"iam:PutRolePolicy\",\n              \"iam:AddRoleToInstanceProfile\",\n              \"iam:PassRole\",\n              \"iam:DetachRolePolicy\",\n              \"iam:ListAttachedRolePolicies\",\n              \"iam:DeleteRolePolicy\",\n              \"iam:ListRolePolicies\",\n              \"iam:TagRole\",\n              \"iam:TagInstanceProfile\",\n              \"batch:CreateComputeEnvironment\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:CreateJobQueue\",\n              \"batch:DescribeJobQueues\",\n              \"batch:UpdateComputeEnvironment\",\n              \"batch:DeleteComputeEnvironment\",\n              \"batch:UpdateJobQueue\",\n              \"batch:DeleteJobQueue\",\n              \"batch:TagResource\",\n              \"fsx:DeleteFileSystem\",\n              \"fsx:DescribeFileSystems\",\n              \"fsx:CreateFileSystem\",\n              \"fsx:TagResource\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeLaunchTemplates\",\n              \"ec2:DescribeLaunchTemplateVersions\", \n              \"ec2:CreateLaunchTemplate\",\n              \"ec2:DeleteLaunchTemplate\",\n              \"ec2:DescribeKeyPairs\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeInstanceTypeOfferings\",\n              \"ec2:GetEbsEncryptionByDefault\",\n              \"elasticfilesystem:DescribeMountTargets\",\n              \"elasticfilesystem:CreateMountTarget\",\n              \"elasticfilesystem:CreateFileSystem\",\n              \"elasticfilesystem:DescribeFileSystems\",\n              \"elasticfilesystem:DeleteMountTarget\",\n              \"elasticfilesystem:DeleteFileSystem\",\n              \"elasticfilesystem:UpdateFileSystem\",\n              \"elasticfilesystem:PutLifecycleConfiguration\",\n              \"elasticfilesystem:TagResource\"\n          ],\n          \"Resource\": \"*\"\n      },\n      {\n          \"Sid\": \"TowerLaunch0\",\n          \"Effect\": \"Allow\",\n          \"Action\": [\n              \"s3:Get*\",\n              \"s3:List*\",\n              \"batch:DescribeJobQueues\",\n              \"batch:CancelJob\",\n              \"batch:SubmitJob\",\n              \"batch:ListJobs\",\n              \"batch:DescribeComputeEnvironments\",\n              \"batch:TerminateJob\",\n              \"batch:DescribeJobs\",\n              \"batch:RegisterJobDefinition\",\n              \"batch:DescribeJobDefinitions\",\n              \"ecs:DescribeTasks\",\n              \"ec2:DescribeInstances\",\n              \"ec2:DescribeInstanceTypes\",\n              \"ec2:DescribeInstanceAttribute\",\n              \"ecs:DescribeContainerInstances\",\n              \"ec2:DescribeInstanceStatus\",\n              \"ec2:DescribeImages\",\n              \"logs:Describe*\",\n              \"logs:Get*\",\n              \"logs:List*\",\n              \"logs:StartQuery\",\n              \"logs:StopQuery\",\n              \"logs:TestMetricFilter\",\n              \"logs:FilterLogEvents\"\n          ],\n          \"Resource\": \"*\"\n      }\n  ]\n}\n"` | no |
 | <a name="input_seqera_service_account_name"></a> [seqera\_service\_account\_name](#input\_seqera\_service\_account\_name) | Name for the Seqera platform service account | `string` | `"seqera-sa"` | no |
 | <a name="input_tower_app_configmap_name"></a> [tower\_app\_configmap\_name](#input\_tower\_app\_configmap\_name) | The name of the configMap for the Tower app. | `string` | `"tower-terraform-cfg"` | no |
+| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | The CIDR block for the VPC. | `string` | `"10.0.0.0/16"` | no |
+| <a name="input_vpc_endpoint_services"></a> [vpc\_endpoint\_services](#input\_vpc\_endpoint\_services) | The list of VPC endpoint services. | `list(string)` | <pre>[<br>  "ssm",<br>  "ssmmessages",<br>  "ec2messages"<br>]</pre> | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | <a name="output_database_url"></a> [database\_url](#output\_database\_url) | Endpoint address for the primary RDS database instance. |
+| <a name="output_ec2_instance_id"></a> [ec2\_instance\_id](#output\_ec2\_instance\_id) | EC2 instance ID. |
+| <a name="output_ec2_instance_public_dns_name"></a> [ec2\_instance\_public\_dns\_name](#output\_ec2\_instance\_public\_dns\_name) | EC2 instance public DNS name. |
 | <a name="output_redis_url"></a> [redis\_url](#output\_redis\_url) | Endpoint address for the Redis cluster. If not available, returns null. |
 | <a name="output_seqera_irsa_role_name"></a> [seqera\_irsa\_role\_name](#output\_seqera\_irsa\_role\_name) | IAM role name associated with Seqera IRSA (IAM Roles for Service Accounts). |

@@ -38,13 +38,6 @@ variable "default_tags" {
   description = "Default tags to be applied to the provisioned resources."
 }
 
-## AWS Profile
-variable "aws_profile" {
-  type        = string
-  default     = "default"
-  description = "The AWS profile used for authentication when interacting with AWS resources."
-}
-
 ## VPC Name
 variable "vpc_name" {
   type        = string
@@ -55,6 +48,23 @@ variable "vpc_name" {
 variable "vpc_cidr" {
   type        = string
   description = "The CIDR block for the VPC."
+  default     = "10.0.0.0/16"
+
+  validation {
+    condition     = can(regex("^(10.0.0.0/16|172.31.0.0/16)$", var.vpc_cidr))
+    error_message = "Invalid VPC CIDR, only allowed are: '10.0.0.0/16', '172.31.0.0/16'. Default '10.0.0.0/16'"
+  }
+}
+
+## Number of Availability Zones
+variable "num_azs" {
+  type        = number
+  description = "The number of Availability Zones to use for the VPC."
+  default     = 2
+  validation {
+    condition     = var.num_azs <= 3 || var.num_azs >= 2
+    error_message = "The number of zones must be less than or equal to the number of available availability zones. Default '2'"
+  }
 }
 
 ## AWS LoadBalancer Controller
@@ -95,6 +105,13 @@ variable "seqera_managed_node_group_min_size" {
   type        = number
   default     = 2
   description = "The minimum size of the EKS managed node group."
+}
+
+## Create EKS cluster
+variable "create_eks_cluster" {
+  type        = bool
+  default     = false
+  description = "Determines whether an EKS cluster should be created."
 }
 
 ## Seqera Managed Node Group - Extra labels
@@ -746,34 +763,18 @@ variable "seqera_managed_node_group_desired_size" {
   description = "The desired size of the EKS managed node group."
 }
 
-## VPC Subnets
-variable "intra_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for intra subnets within the VPC."
-}
-
 ## Public Subnets
 variable "public_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for public subnets within the VPC."
+  default     = []
 }
 
 ## Private Subnets
 variable "private_subnets" {
   type        = list(string)
   description = "A list of subnet IDs for private subnets within the VPC."
-}
-
-## Database Subnets
-variable "database_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for database subnets within the VPC."
-}
-
-## Elasticache Subnets
-variable "elasticache_subnets" {
-  type        = list(string)
-  description = "A list of subnet IDs for Elasticache subnets within the VPC."
+  default     = []
 }
 
 ## Enable DNS Hostnames
@@ -825,16 +826,11 @@ variable "enable_vpn_gateway" {
   description = "Determines whether a VPN gateway should be provisioned."
 }
 
-## Availability Zones
-variable "azs" {
-  type        = list(string)
-  description = "A list of Availability Zones in the selected region."
-}
-
 ## EKS Cluster Name
 variable "cluster_name" {
   type        = string
   description = "The name of the EKS cluster."
+  default     = "seqera"
 }
 
 ## EKS Cluster Version
@@ -1473,4 +1469,325 @@ variable "redis_subnet_group_description" {
   type        = string
   description = "The description of the Redis subnet group."
   default     = "Seqera Redis subnet group"
+}
+
+## Create EC2 instance
+variable "create_ec2_instance" {
+  type        = bool
+  description = "Determines whether to create an EC2 instance."
+  default     = false
+}
+
+## Create EC2 Spot instance
+variable "create_ec2_spot_instance" {
+  type        = bool
+  description = "Determines whether to create an EC2 spot instance."
+  default     = false
+}
+
+## EC2 Instance Name
+variable "ec2_instance_name" {
+  type        = string
+  description = "The name of the EC2 instance."
+  default     = "seqera-platform-vm"
+}
+
+## EC2 Instance Type
+variable "ec2_instance_type" {
+  type        = string
+  description = "The type of the EC2 instance."
+  default     = "m5a.2xlarge"
+}
+
+## EC2 instance profile name
+variable "ec2_instance_profile_iam_policy_name" {
+  type        = string
+  description = "The name of the IAM policy for the EC2 instance profile."
+  default     = "seqera-forge-policy"
+}
+
+## EC2 instance profile name
+variable "ec2_instance_iam_role_name" {
+  type        = string
+  description = "The name of the IAM role for the EC2 instance."
+  default     = "seqera-forge-role"
+}
+
+## EC2 instance SSH key name
+variable "ec2_instance_key_name" {
+  type        = string
+  description = "The name of the key pair for the EC2 instance."
+  default     = null
+}
+
+## Create EC2 instnace local SSH key pair
+variable "create_ec2_instance_local_key_pair" {
+  type        = bool
+  description = "Determines whether to create a local SSH key pair for the EC2 instance."
+  default     = false
+}
+
+## EC2 instance SSH public key path
+variable "ec2_instance_ssh_public_key_path" {
+  type        = string
+  description = "The path to the public key for the EC2 instance."
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+## EC2 instance user data replace on change
+variable "ec2_instance_user_data_replace_on_change" {
+  type        = bool
+  description = "Determines whether the EC2 instance user data should be replaced on change."
+  default     = true
+}
+
+## Local SSH key pair name
+variable "local_ssh_key_pair_name" {
+  type        = string
+  description = "The name of the local SSH key pair."
+  default     = "seqera-platform-keypair"
+}
+
+## Create public instance
+variable "create_ec2_public_instance" {
+  type        = bool
+  description = "Determines whether to create a public EC2 instance."
+  default     = false
+}
+
+## Enable EC2 instance monitoring
+variable "enable_ec2_instance_monitoring" {
+  type        = bool
+  description = "Determines whether detailed monitoring is enabled for the EC2 instance."
+  default     = true
+}
+
+## Ignore EC2 instance AMI changes
+variable "ignore_ec2_instance_ami_changes" {
+  type        = bool
+  description = "Determines whether to ignore AMI changes for the EC2 instance."
+  default     = true
+}
+
+## EC2 instance AMI ID
+variable "ec2_instance_ami_id" {
+  type        = string
+  description = "The ID of the AMI for the EC2 instance."
+  default     = ""
+}
+
+## EC2 root block device
+variable "ec2_instance_root_block_device" {
+  type        = list(any)
+  description = "The root block device for the EC2 instance."
+  default = [
+    {
+      volume_type = "gp3"
+      volume_size = 100
+    }
+  ]
+}
+
+## EC2 EBS block device
+variable "ebs_block_device" {
+  type        = list(any)
+  description = "The list of EBS block devices for the EC2 instance."
+  default = [
+    {
+      device_name = "/dev/sdx"
+      volume_type = "gp3"
+      volume_size = 100
+    }
+  ]
+}
+
+## Enables EC2 instance profile creation
+variable "create_ec2_instance_iam_instance_profile" {
+  type        = bool
+  description = "Determines whether to create an IAM instance profile for the EC2 instance."
+  default     = true
+}
+
+## EC2 instance get password data
+variable "get_ec2_instance_password_data" {
+  type        = bool
+  description = "Determines whether to get the password data for the EC2 instance."
+  default     = false
+}
+
+## EC2 instance IAM role description
+variable "ec2_instance_iam_role_description" {
+  type        = string
+  description = "The description of the IAM role for the EC2 instance."
+  default     = "Seqera Forge IAM role"
+}
+
+## EC2 instance security group name
+variable "ec2_instance_security_group_name" {
+  type        = string
+  description = "The name of the security group for the EC2 instance."
+  default     = "seqera-forge-security-group"
+}
+
+## EC2 instance security group egress CIDR block
+variable "ec2_instance_sg_ingress_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group ingress rule."
+  default     = ["0.0.0.0/0"]
+}
+
+## EC2 instance security group ingress CIDR block
+variable "ec2_instance_sg_egress_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group egress rule."
+  default     = ["0.0.0.0/0"]
+}
+
+variable "ec2_instance_security_group_ingress_rules_names" {
+  type        = list(string)
+  description = "The names of the security group ingress rules."
+  default     = ["http-80-tcp", "https-443-tcp", "ssh-tcp", "kubernetes-api-tcp"]
+}
+
+variable "ec2_instance_secirity_group_egress_rules_names" {
+  type        = list(string)
+  description = "The names of the security group egress rules."
+  default     = ["all-all"]
+}
+
+## Enable SSM Session Manager access
+variable "enable_ec2_instance_session_manager_access" {
+  type        = bool
+  description = "Determines whether SSM Session Manager access is enabled for the EC2 instance."
+  default     = false
+}
+
+## VPC Endpoint services
+variable "vpc_endpoint_services" {
+  type        = list(string)
+  description = "The list of VPC endpoint services."
+  default     = ["ssm", "ssmmessages", "ec2messages"]
+}
+
+## EC2 instance profile policy
+variable "ec2_instance_profile_iam_policy" {
+  type        = string
+  description = "IAM policy for the EC2 instance profile"
+  default     = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Sid": "TowerForge0",
+          "Effect": "Allow",
+          "Action": [
+              "ssm:GetParameters",
+              "iam:CreateInstanceProfile",
+              "iam:DeleteInstanceProfile",
+              "iam:GetRole",
+              "iam:RemoveRoleFromInstanceProfile",
+              "iam:CreateRole",
+              "iam:DeleteRole",
+              "iam:AttachRolePolicy",
+              "iam:PutRolePolicy",
+              "iam:AddRoleToInstanceProfile",
+              "iam:PassRole",
+              "iam:DetachRolePolicy",
+              "iam:ListAttachedRolePolicies",
+              "iam:DeleteRolePolicy",
+              "iam:ListRolePolicies",
+              "iam:TagRole",
+              "iam:TagInstanceProfile",
+              "batch:CreateComputeEnvironment",
+              "batch:DescribeComputeEnvironments",
+              "batch:CreateJobQueue",
+              "batch:DescribeJobQueues",
+              "batch:UpdateComputeEnvironment",
+              "batch:DeleteComputeEnvironment",
+              "batch:UpdateJobQueue",
+              "batch:DeleteJobQueue",
+              "fsx:DeleteFileSystem",
+              "fsx:DescribeFileSystems",
+              "fsx:CreateFileSystem",
+              "fsx:TagResource",
+              "ec2:DescribeSecurityGroups",
+              "ec2:DescribeAccountAttributes",
+              "ec2:DescribeSubnets",
+              "ec2:DescribeLaunchTemplates",
+              "ec2:DescribeLaunchTemplateVersions", 
+              "ec2:CreateLaunchTemplate",
+              "ec2:DeleteLaunchTemplate",
+              "ec2:DescribeKeyPairs",
+              "ec2:DescribeVpcs",
+              "ec2:DescribeInstanceTypeOfferings",
+              "ec2:GetEbsEncryptionByDefault",
+              "elasticfilesystem:DescribeMountTargets",
+              "elasticfilesystem:CreateMountTarget",
+              "elasticfilesystem:CreateFileSystem",
+              "elasticfilesystem:DescribeFileSystems",
+              "elasticfilesystem:DeleteMountTarget",
+              "elasticfilesystem:DeleteFileSystem",
+              "elasticfilesystem:UpdateFileSystem",
+              "elasticfilesystem:PutLifecycleConfiguration",
+              "elasticfilesystem:TagResource"
+          ],
+          "Resource": "*"
+      },
+      {
+          "Sid": "TowerLaunch0",
+          "Effect": "Allow",
+          "Action": [
+              "s3:Get*",
+              "s3:List*",
+              "batch:DescribeJobQueues",
+              "batch:CancelJob",
+              "batch:SubmitJob",
+              "batch:ListJobs",
+              "batch:TagResource",
+              "batch:DescribeComputeEnvironments",
+              "batch:TerminateJob",
+              "batch:DescribeJobs",
+              "batch:RegisterJobDefinition",
+              "batch:DescribeJobDefinitions",
+              "ecs:DescribeTasks",
+              "ec2:DescribeInstances",
+              "ec2:DescribeInstanceTypes",
+              "ec2:DescribeInstanceAttribute",
+              "ecs:DescribeContainerInstances",
+              "ec2:DescribeInstanceStatus",
+              "ec2:DescribeImages",
+              "logs:Describe*",
+              "logs:Get*",
+              "logs:List*",
+              "logs:StartQuery",
+              "logs:StopQuery",
+              "logs:TestMetricFilter",
+              "logs:FilterLogEvents",
+              "ses:SendRawEmail"
+          ],
+          "Resource": "*"
+      }
+  ]
+}
+EOF
+}
+
+## Create Loadbalancer
+variable "create_alb" {
+  type        = bool
+  description = "Determines whether to create an Application Load Balancer."
+  default     = false
+}
+
+## Loadbalancer name
+variable "alb_name" {
+  type        = string
+  description = "The name of the load balancer."
+  default     = "seqera-alb"
+}
+
+variable "create_public_alb" {
+  type        = bool
+  description = "Determines whether to create a public load balancer."
+  default     = true
 }
