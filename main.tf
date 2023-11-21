@@ -300,7 +300,7 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
             "-e", <<-EOT
               ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin;
               CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY "${local.db_app_password}";
-              GRANT ALL PRIVILEGES ON ${var.db_app_username}.* TO ${var.db_app_username}@'%';
+              GRANT ALL PRIVILEGES ON ${var.db_app_schema_name}.* TO ${var.db_app_username}@'%';
             EOT
           ]
         }
@@ -1527,10 +1527,11 @@ locals {
 #!/bin/bash
 yum apt update -y
 yum install mysql -y
+
 mysql --host=${module.db[0].db_instance_address} --user=${var.db_root_username} --password=${local.db_root_password} \
--Bse "ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin;
-CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY "${local.db_app_password}";
-GRANT ALL PRIVILEGES ON ${var.db_app_username}.* TO ${var.db_app_username}@'%';"
+-Bse "ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin; \
+CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY '${local.db_app_password}'; \
+GRANT ALL PRIVILEGES ON ${var.db_app_schema_name}.* TO ${var.db_app_username}@'%';"
 EOF
 }
 
@@ -1547,7 +1548,8 @@ module "ec2_instance" {
   key_name                    = var.create_ec2_instance_local_key_pair ? module.key_pair.key_pair_name : var.ec2_instance_key_name
   monitoring                  = var.enable_ec2_instance_monitoring
   vpc_security_group_ids      = var.create_ec2_instance || var.create_ec2_spot_instance ? [module.ec2_sg[0].security_group_id] : []
-  subnet_id                   = var.create_ec2_public_instance ? module.vpc.public_subnets[0] : module.vpc.private_subnets[0]
+  subnet_id                   = var.create_ec2_public_instance ? element(module.vpc.public_subnets, 0) : element(module.vpc.private_subnets, 0)
+  availability_zone           = element(module.vpc.azs, 0)
   associate_public_ip_address = var.create_ec2_public_instance
   ami                         = var.ec2_instance_ami_id != "" ? var.ec2_instance_ami_id : data.aws_ami.amazon_linux_2.id
   create_iam_instance_profile = var.create_ec2_instance_iam_instance_profile
@@ -1567,7 +1569,8 @@ module "ec2_instance" {
   tags = var.default_tags
 
   depends_on = [
-    module.vpc
+    module.vpc,
+    module.db
   ]
 }
 
