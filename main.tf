@@ -1522,19 +1522,6 @@ module "vpc_endpoints" {
   ]
 }
 
-locals {
-  ec2_instance_user_data = <<EOF
-#!/bin/bash
-yum apt update -y
-yum install mysql -y
-
-mysql --host=${module.db[0].db_instance_address} --user=${var.db_root_username} --password=${local.db_root_password} \
--Bse "ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin; \
-CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY '${local.db_app_password}'; \
-GRANT ALL PRIVILEGES ON ${var.db_app_schema_name}.* TO ${var.db_app_username}@'%';"
-EOF
-}
-
 ## EC2 Instance Module
 module "ec2_instance" {
   source               = "terraform-aws-modules/ec2-instance/aws"
@@ -1559,8 +1546,6 @@ module "ec2_instance" {
   iam_role_policies           = var.create_ec2_instance || var.create_ec2_spot_instance ? { "TowerForgePolicy" = module.ec2_instance_profile_iam_policy[0].arn, AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } : {}
   iam_role_tags               = var.default_tags
   ignore_ami_changes          = var.ignore_ec2_instance_ami_changes
-  user_data_base64            = var.create_db_cluster ? base64encode(local.ec2_instance_user_data) : null
-  user_data_replace_on_change = var.ec2_instance_user_data_replace_on_change
 
   root_block_device = var.ec2_instance_root_block_device
   ebs_block_device  = var.ebs_block_device
@@ -1573,4 +1558,3 @@ module "ec2_instance" {
     module.db
   ]
 }
-
