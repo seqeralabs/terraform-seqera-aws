@@ -836,7 +836,7 @@ variable "cluster_name" {
 ## EKS Cluster Version
 variable "cluster_version" {
   type        = string
-  default     = "1.27"
+  default     = "1.26"
   description = "The version of Kubernetes to use for the EKS cluster."
 }
 
