@@ -1772,22 +1772,27 @@ variable "ec2_instance_profile_iam_policy" {
 EOF
 }
 
-## Create Loadbalancer
-variable "create_alb" {
+## Send Terraform output values to file
+variable "create_output_file" {
   type        = bool
-  description = "Determines whether to create an Application Load Balancer."
+  description = "Determines whether to send Terraform output values to a file."
   default     = false
 }
 
-## Loadbalancer name
-variable "alb_name" {
+variable "output_file_name" {
   type        = string
-  description = "The name of the load balancer."
-  default     = "seqera-alb"
+  description = "The name of the file to send Terraform output values to."
+  default     = "terraform-output.txt"
 }
 
-variable "create_public_alb" {
-  type        = bool
-  description = "Determines whether to create a public load balancer."
-  default     = true
+variable "output_file_path" {
+  type        = string
+  description = "The path to the file to send Terraform output values to."
+  default     = "."
+}
+
+variable "output_file_permissions" {
+  type        = number
+  description = "The permissions for the file to send Terraform output values to."
+  default     = 0644
 }

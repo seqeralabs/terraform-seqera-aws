@@ -1558,3 +1558,22 @@ module "ec2_instance" {
     module.db
   ]
 }
+
+## File ouput configuration
+resource "local_file" "output_file" {
+  count           = var.create_output_file ? 1 : 0
+  content         = <<EOF
+%{if var.create_ec2_public_instance~}
+export TOWER_HOSTNAME=${module.ec2_instance.public_dns}
+%{endif~}
+%{if var.create_db_cluster~}
+export TOWER_DB_HOSTNAME=${module.db[0].db_instance_address}
+%{endif~}
+%{if var.create_redis_cluster~}
+export TOWER_REDIS_HOSTNAME=${module.redis[0].endpoint}
+%{endif~}
+EOF
+  filename        = "${var.output_file_path}/${var.output_file_name}"
+  file_permission = var.output_file_permissions
+
+}
