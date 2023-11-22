@@ -1080,7 +1080,7 @@ variable "db_engine_version" {
 }
 
 ## Database Instance Class
-variable "db_instance_class" {
+variable "db_instance_type" {
   type        = string
   default     = "db.r5.xlarge"
   description = "The instance class for the database."
