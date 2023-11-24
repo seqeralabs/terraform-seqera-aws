@@ -1163,6 +1163,51 @@ module "ec2_sg" {
   depends_on = [module.vpc]
 }
 
+module "ec2_ssh_rule" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "5.1.0"
+  count   = var.create_ec2_instance && var.enable_ec2_instance_ssh_access || var.create_ec2_spot_instance && var.enable_ec2_instance_ssh_access ? 1 : 0
+  name    = "ec2-ssh-rule"
+
+  create_sg         = false
+  security_group_id = module.ec2_sg[0].security_group_id
+  ingress_with_cidr_blocks = [
+    {
+      description = "Allow SSH access for EC2 instance"
+      rule        = "ssh-tcp"
+      cidr_blocks = join(",", concat(local.local_public_ip, var.ec2_instnace_ssh_cidr_blocks))
+    },
+  ]
+}
+
+module "ec2_k8s_api_rule" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "5.1.0"
+  count   = var.create_ec2_instance && var.enable_ec2_instance_kubernetes_api_access || var.create_ec2_spot_instance && var.enable_ec2_instance_kubernetes_api_access ? 1 : 0
+  name    = "ec2-k8s-rule"
+
+  create_sg         = false
+  security_group_id = module.ec2_sg[0].security_group_id
+  ingress_with_cidr_blocks = [
+    {
+      description = "Allow Kubernetes API access for EC2 instance"
+      rule        = "kubernetes-api-tcp"
+      cidr_blocks = join(",", concat(local.local_public_ip, var.ec2_instance_kubernetes_api_cidr_blocks))
+    },
+  ]
+}
+
+# Data source to get the local public IP.
+data "http" "local_public_ip" {
+  count = var.enable_ec2_instance_ssh_access || var.enable_ec2_instance_kubernetes_api_access ? 1 : 0
+  url   = "http://ipv4.icanhazip.com"
+}
+
+# Manipulate the data source outuput to get the local public IP with the CIDR block
+locals {
+  local_public_ip = [replace(data.http.local_public_ip[0].response_body, "\n", "/32")]
+}
+
 # This resource generates a random password specifically for the database cluster.
 resource "random_password" "db_app_password" {
   count = var.create_db_cluster ? 1 : 0 # Generates the password only if the 'create_db_cluster' variable is set to true.
@@ -1416,6 +1461,7 @@ module "aws_ebs_csi_driver_iam_policy" {
   tags = var.default_tags # Assigning default tags.
 }
 
+## IAM role for the EC2 instance
 module "ec2_instance_profile_iam_policy" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-policy"
   version     = "5.30.0"                                                                                                                                                        # Specifies the version of the module to use.
@@ -1554,7 +1600,6 @@ module "ec2_instance" {
   tags = var.default_tags
 
   depends_on = [
-    module.vpc,
-    module.db
+    module.vpc
   ]
 }
