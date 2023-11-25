@@ -1246,7 +1246,7 @@ module "db" {
   username = var.db_root_username   # Master username for the DB.
   port     = var.db_port            # The port on which the DB accepts connections.
   # If a DB password is provided in the variable, use that. Otherwise, use the randomly generated password.
-  password = var.db_root_password != "" ? var.db_app_password : random_password.db_root_password[0].result
+  password = var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result
 
   iam_database_authentication_enabled = var.db_iam_database_authentication_enabled # Enable IAM authentication for the DB.
 
