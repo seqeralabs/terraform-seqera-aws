@@ -1665,7 +1665,7 @@ variable "enable_ec2_instance_kubernetes_api_access" {
 }
 
 ## EC2 SSH allowed CIDR blocks
-variable "ec2_instnace_ssh_cidr_blocks" {
+variable "ec2_instance_ssh_cidr_blocks" {
   type        = list(string)
   description = "The CIDR blocks for the security group ingress rule."
   default     = [""]
