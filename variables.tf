@@ -1679,7 +1679,7 @@ variable "ec2_instance_kubernetes_api_cidr_blocks" {
 }
 
 ## EC2 instance security group egress rule names
-variable "ec2_instance_secirity_group_egress_rules_names" {
+variable "ec2_instance_security_group_egress_rules_names" {
   type        = list(string)
   description = "The names of the security group egress rules."
   default     = ["all-all"]
