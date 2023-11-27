@@ -269,8 +269,8 @@ resource "kubernetes_config_map_v1" "tower_app_configmap" {
 
 ## This local is used to control the password values passed to the db setup job.
 locals {
-  db_root_password = var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result
-  db_app_password  = var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result
+  db_root_password = var.db_root_password != "" ? var.db_root_password : try(random_password.db_root_password[0].result, null)
+  db_app_password  = var.db_app_password != "" ? var.db_app_password : try(random_password.db_app_password[0].result, null)
 }
 
 # This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
@@ -353,6 +353,13 @@ resource "helm_release" "aws_cluster_autoscaler" {
   depends_on = [
     module.eks
   ]
+
+  lifecycle {
+    postcondition {
+      condition = self.status == "deployed"
+      error_message = "Failed to deploy the AWS cluster autoscaler Helm chart."
+    }
+  }
 }
 
 # A Helm release resource for deploying the AWS EBS CSI driver using the Helm package manager.
@@ -372,6 +379,13 @@ resource "helm_release" "aws-ebs-csi-driver" {
     module.eks,
     module.aws_ebs_csi_driver_iam_policy
   ]
+
+  lifecycle {
+    postcondition {
+      condition = self.status == "deployed"
+      error_message = "Failed to deploy the AWS EBS CSI driver Helm chart."
+    }
+  }
 }
 
 # Customer Resource Definition (CRD) for the AWS Load Balancer Controller.
@@ -1012,6 +1026,13 @@ resource "helm_release" "aws-load-balancer-controller" {
     module.eks,
     kubectl_manifest.aws_loadbalancer_controller_crd
   ]
+
+  lifecycle {
+    postcondition {
+      condition = self.status == "deployed"
+      error_message = "Failed to deploy the AWS Load Balancer Controller Helm chart."
+    }
+  }
 }
 
 # This resource creates an AWS Elastic File System (EFS) specifically for the EKS cluster.
@@ -1094,6 +1115,13 @@ resource "helm_release" "aws-efs-csi-driver" {
   set {
     name  = "controller.serviceAccount.create" # Configuration parameter for the Helm chart.
     value = true                               # Sets the `controller.serviceAccount.create` parameter value to true.
+  }
+
+  lifecycle {
+    postcondition {
+      condition = self.status == "deployed"
+      error_message = "Failed to deploy the AWS EFS CSI driver Helm chart."
+    }
   }
 }
 
