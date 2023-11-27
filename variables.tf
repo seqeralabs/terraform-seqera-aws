@@ -1676,7 +1676,6 @@ variable "ec2_instance_kubernetes_api_cidr_blocks" {
   type        = list(string)
   description = "The CIDR blocks for the security group ingress rule."
   default     = [""]
-
 }
 
 ## EC2 instance security group egress rule names
