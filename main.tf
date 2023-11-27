@@ -1157,7 +1157,7 @@ module "ec2_sg" {
 
   ingress_cidr_blocks = var.ec2_instance_sg_ingress_cidr_blocks             # Allows incoming traffic from the private subnets of the VPC.
   ingress_rules       = var.ec2_instance_security_group_ingress_rules_names # Specific set of ingress rules.
-  egress_rules        = var.ec2_instance_secirity_group_egress_rules_names  # Specific set of egress rules.
+  egress_rules        = var.ec2_instance_security_group_egress_rules_names  # Specific set of egress rules.
   egress_cidr_blocks  = var.ec2_instance_sg_egress_cidr_blocks              # Allows outgoing traffic to the private subnets of the VPC.
 
   depends_on = [module.vpc]
@@ -1175,7 +1175,7 @@ module "ec2_ssh_rule" {
     {
       description = "Allow SSH access for EC2 instance"
       rule        = "ssh-tcp"
-      cidr_blocks = join(",", concat(local.local_public_ip, var.ec2_instnace_ssh_cidr_blocks))
+      cidr_blocks = join(",", concat(local.local_public_ip, var.ec2_instance_ssh_cidr_blocks))
     },
   ]
 }
