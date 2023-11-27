@@ -1653,7 +1653,7 @@ variable "ec2_instance_security_group_ingress_rules_names" {
 ## Enable EC2 instance SSH access
 variable "enable_ec2_instance_ssh_access" {
   type        = bool
-  description = "Determines whether SSH access is enabled for the EC2 instance."
+  description = "Defines whether SSH access is enabled for the EC2 instance."
   default     = true
 }
 
