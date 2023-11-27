@@ -1660,7 +1660,7 @@ variable "enable_ec2_instance_ssh_access" {
 ## Enable EC2 instance Kubernetes API access
 variable "enable_ec2_instance_kubernetes_api_access" {
   type        = bool
-  description = "Determines whether Kubernetes API access is enabled for the EC2 instance."
+  description = "Defines whether Kubernetes API access should be enabled for the EC2 instance."
   default     = true
 }
 
