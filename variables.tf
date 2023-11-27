@@ -1669,7 +1669,6 @@ variable "ec2_instnace_ssh_cidr_blocks" {
   type        = list(string)
   description = "The CIDR blocks for the security group ingress rule."
   default     = [""]
-
 }
 
 ## EC2 instance Kubernetes API allowed CIDR blocks
