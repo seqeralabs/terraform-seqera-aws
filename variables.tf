@@ -1646,7 +1646,7 @@ variable "ec2_instance_sg_egress_cidr_blocks" {
 ## EC2 instance security group ingress rule names
 variable "ec2_instance_security_group_ingress_rules_names" {
   type        = list(string)
-  description = "The names of the security group ingress rules."
+  description = "Security group ingress rules names."
   default     = ["http-80-tcp", "https-443-tcp"]
 }
 
