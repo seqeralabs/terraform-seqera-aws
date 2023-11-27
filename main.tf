@@ -199,6 +199,10 @@ module "eks" {
   aws_auth_users            = local.eks_aws_auth_users
 
   tags = var.default_tags
+
+  depends_on = [ 
+    module.vpc
+  ]
 }
 
 # A resource to create a Kubernetes namespace.
@@ -207,6 +211,17 @@ resource "kubernetes_namespace_v1" "this" {
 
   metadata {
     name = var.seqera_namespace_name
+  }
+
+  depends_on = [
+    module.eks
+  ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
   }
 }
 
@@ -224,7 +239,17 @@ resource "kubernetes_service_account_v1" "this" {
 
   automount_service_account_token = true
 
-  depends_on = [kubernetes_namespace_v1.this] # Ensures the namespace is created before the service account.
+  depends_on = [
+    module.eks,
+    kubernetes_namespace_v1.this
+  ] # Ensures the namespace is created before the service account.
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }
 }
 
 # DB Secret
@@ -245,6 +270,13 @@ resource "kubernetes_secret_v1" "db_app_password" {
   depends_on = [
     module.eks
   ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }
 }
 
 # Config Map
@@ -265,6 +297,13 @@ resource "kubernetes_config_map_v1" "tower_app_configmap" {
     module.redis,
     module.eks
   ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }
 }
 
 ## This local is used to control the password values passed to the db setup job.
@@ -275,7 +314,7 @@ locals {
 
 # This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
 resource "kubernetes_job_v1" "seqera_schema_job" {
-  count = var.create_db_cluster && var.create_db_cluster && var.create_eks_cluster ? 1 : 0
+  count = var.create_db_cluster && var.create_eks_cluster ? 1 : 0
   metadata {
     name      = var.db_setup_job_name
     namespace = var.seqera_namespace_name
@@ -325,6 +364,13 @@ resource "kubernetes_job_v1" "seqera_schema_job" {
     module.eks,
     module.db
   ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }
 }
 
 # A Helm release resource for deploying the AWS cluster autoscaler using the Helm package manager.
@@ -355,6 +401,11 @@ resource "helm_release" "aws_cluster_autoscaler" {
   ]
 
   lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+
     postcondition {
       condition = self.status == "deployed"
       error_message = "Failed to deploy the AWS cluster autoscaler Helm chart."
@@ -381,6 +432,11 @@ resource "helm_release" "aws-ebs-csi-driver" {
   ]
 
   lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+
     postcondition {
       condition = self.status == "deployed"
       error_message = "Failed to deploy the AWS EBS CSI driver Helm chart."
@@ -987,6 +1043,13 @@ YAML
   depends_on = [
     module.eks
   ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }
 }
 
 # A Helm release resource for deploying the AWS Load Balancer Controller using the Helm package manager.
@@ -1028,6 +1091,11 @@ resource "helm_release" "aws-load-balancer-controller" {
   ]
 
   lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+
     postcondition {
       condition = self.status == "deployed"
       error_message = "Failed to deploy the AWS Load Balancer Controller Helm chart."
@@ -1098,6 +1166,13 @@ resource "kubernetes_storage_class" "efs_storage_class" {
   depends_on = [
     module.eks # Ensures that the EKS module is completely applied before this resource.
   ]
+
+  lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+  }  
 }
 
 # This resource installs the AWS EFS CSI driver using Helm, a package manager for Kubernetes.
@@ -1118,6 +1193,11 @@ resource "helm_release" "aws-efs-csi-driver" {
   }
 
   lifecycle {
+    precondition {
+      condition = module.eks.cluster_status == "ACTIVE"
+      error_message = "The EKS cluster is not active."
+    }
+
     postcondition {
       condition = self.status == "deployed"
       error_message = "Failed to deploy the AWS EFS CSI driver Helm chart."
