@@ -1200,7 +1200,7 @@ module "ec2_k8s_api_rule" {
 # Data source to get the local public IP.
 data "http" "local_public_ip" {
   count = var.enable_ec2_instance_ssh_access || var.enable_ec2_instance_kubernetes_api_access ? 1 : 0
-  url   = "http://ipv4.icanhazip.com"
+  url   = "https://ipv4.icanhazip.com"
 }
 
 # Manipulate the data source outuput to get the local public IP with the CIDR block
