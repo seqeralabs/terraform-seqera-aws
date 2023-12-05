@@ -1,7 +1,6 @@
 ## -- Complete Example for Public EC2 instance -- ##
-module "terraform-seqera-module" {
-  # source  = "github.com/seqeralabs/terraform-seqera-module"
-  source = "/Users/adianny/seqera/git/terraform-seqera-module"
+module "terraform-seqera-aws" {
+  source = "../../"
   region  = "eu-west-2"
 
   ## VPC

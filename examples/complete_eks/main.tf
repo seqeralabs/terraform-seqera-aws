@@ -1,5 +1,5 @@
 ## -- Complete Example for EKS cluster -- ##
-module "terraform-seqera-module" {
+module "terraform-seqera-aws" {
   source = "../../"
   region  = "eu-west-2"
 
@@ -10,22 +10,9 @@ module "terraform-seqera-module" {
   create_eks_cluster = true
   cluster_name    = "seqera-terraform-aws"
   cluster_version = "1.27"
-  seqera_managed_node_group_defaults_instance_types = ["t3.medium"]
-  seqera_managed_node_group_defaults_capacity_type = "ON_DEMAND"
-  eks_aws_auth_roles = [ 
-    "arn:aws:iam::123456789102:role/myrole"
-  ]
 
   ## EC2 Instance
   create_ec2_instance = false
-
-  ## EKS AWS Auth Users
-  eks_aws_auth_users = [
-    "arn:aws:iam::123456789102:user/myuser"
-  ]
-
-  ## EKS Seqera Managed Node Group Max Size
-  seqera_managed_node_group_max_size = 10
 
   enable_aws_ebs_csi_driver = true
   enable_aws_loadbalancer_controller = true

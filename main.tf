@@ -269,8 +269,8 @@ resource "kubernetes_config_map_v1" "tower_app_configmap" {
 
 ## This local is used to control the password values passed to the db setup job.
 locals {
-  db_root_password = var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result
-  db_app_password  = var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result
+  db_root_password = try(var.db_root_password != "" ? var.db_root_password : random_password.db_root_password[0].result, "")
+  db_app_password  = try(var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result, "")
 }
 
 # This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
