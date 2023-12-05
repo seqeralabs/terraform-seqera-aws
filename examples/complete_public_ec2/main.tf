@@ -1,5 +1,5 @@
 ## -- Complete Example for Public EC2 instance -- ##
-module "terraform-seqera-module" {
+module "terraform-seqera-aws" {
   # source  = "github.com/seqeralabs/terraform-seqera-module"
   source = "/Users/adianny/seqera/git/terraform-seqera-module"
   region  = "eu-west-2"
