@@ -67,7 +67,7 @@ locals {
 # subnets, internet gateways, route tables, and network gateways.
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws" # The source from where the module is fetched.
-  version = "5.1.2"                         # Specifies the version of the module to use.
+  version = "5.4.0"                         # Specifies the version of the module to use.
 
   # Define the VPC name and CIDR block.
   name = var.vpc_name
@@ -147,7 +147,7 @@ locals {
 # This module provisions an AWS EKS cluster using the terraform-aws-modules' EKS module.
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.19.0" # Specifies the version of the EKS module to use.
+  version = "19.21.0" # Specifies the version of the EKS module to use.
   create  = var.create_eks_cluster
 
   cluster_name    = var.cluster_name

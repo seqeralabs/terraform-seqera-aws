@@ -1,75 +1,57 @@
-run "complete_eks_plan" {
-    command = plan
-
-    module {
-        source = "./examples/complete_eks"
-    }
+provider "aws" {
+  alias  = "us-west-1"
+  region = "us-west-1"
 }
 
-run completes_public_ec2_plan {
-    command = plan
+provider "aws" {
+  alias  = "us-west-2"
+  region = "us-west-2"
+}
 
-    module {
-        source = "./examples/complete_public_ec2"
-    }
+run "complete_eks_plan" {
+  command = plan
+
+  providers = {
+    aws = aws.us-west-1
+  }
+
+  module {
+    source = "./examples/complete_eks"
+  }
+}
+
+run "completes_public_ec2_plan" {
+  command = plan
+
+  providers = {
+    aws = aws.us-west-2
+  }
+
+  module {
+    source = "./examples/complete_public_ec2"
+  }
 }
 
 run "test_eks" {
-    command = apply
+  command = apply
 
-    module {
-        source = "./examples/complete_eks"
-    }
+  providers = {
+    aws = aws.us-west-1
+  }
 
-    plan_options {
-        target = [
-            module.terraform-seqera-module.module.vpc,
-            module.terraform-seqera-module.module.eks
-        ]
-    }
-}
-
-run "test_db" {
-    command = apply
-
-    module {
-        source = "./examples/complete_eks"
-    }
-
-    plan_options {
-        target = [
-            module.terraform-seqera-module.module.vpc,
-            module.terraform-seqera-module.module.db
-        ]
-    }
-}
-
-run "test_redis" {
-    command = apply
-
-    module {
-        source = "./examples/complete_eks"
-    }
-
-    plan_options {
-        target = [
-            module.terraform-seqera-module.module.vpc,
-            module.terraform-seqera-module.module.redis
-        ]
-    }
+  module {
+    source = "./examples/complete_eks"
+  }
 }
 
 run "test_ec2" {
-    command = apply
+  command = apply
 
-    module {
-        source = "./examples/complete_public_ec2"
-    }
+  providers = {
+    aws = aws.us-west-2
+  }
 
-    plan_options {
-        target = [
-            module.terraform-seqera-module.module.vpc,
-            module.terraform-seqera-module.module.ec2_instance
-        ]
-    }
+  module {
+    source = "./examples/complete_public_ec2"
+  }
 }
