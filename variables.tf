@@ -1643,13 +1643,43 @@ variable "ec2_instance_sg_egress_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
+## EC2 instance security group ingress rule names
 variable "ec2_instance_security_group_ingress_rules_names" {
   type        = list(string)
-  description = "The names of the security group ingress rules."
-  default     = ["http-80-tcp", "https-443-tcp", "ssh-tcp", "kubernetes-api-tcp"]
+  description = "Security group ingress rules names."
+  default     = ["http-80-tcp", "https-443-tcp"]
 }
 
-variable "ec2_instance_secirity_group_egress_rules_names" {
+## Enable EC2 instance SSH access
+variable "enable_ec2_instance_ssh_access" {
+  type        = bool
+  description = "Defines whether SSH access is enabled for the EC2 instance."
+  default     = true
+}
+
+## Enable EC2 instance Kubernetes API access
+variable "enable_ec2_instance_kubernetes_api_access" {
+  type        = bool
+  description = "Defines whether Kubernetes API access should be enabled for the EC2 instance."
+  default     = true
+}
+
+## EC2 SSH allowed CIDR blocks
+variable "ec2_instance_ssh_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group ingress rule."
+  default     = [""]
+}
+
+## EC2 instance Kubernetes API allowed CIDR blocks
+variable "ec2_instance_kubernetes_api_cidr_blocks" {
+  type        = list(string)
+  description = "The CIDR blocks for the security group ingress rule."
+  default     = [""]
+}
+
+## EC2 instance security group egress rule names
+variable "ec2_instance_security_group_egress_rules_names" {
   type        = list(string)
   description = "The names of the security group egress rules."
   default     = ["all-all"]
@@ -1772,22 +1802,3 @@ variable "ec2_instance_profile_iam_policy" {
 EOF
 }
 
-## Create Loadbalancer
-variable "create_alb" {
-  type        = bool
-  description = "Determines whether to create an Application Load Balancer."
-  default     = false
-}
-
-## Loadbalancer name
-variable "alb_name" {
-  type        = string
-  description = "The name of the load balancer."
-  default     = "seqera-alb"
-}
-
-variable "create_public_alb" {
-  type        = bool
-  description = "Determines whether to create a public load balancer."
-  default     = true
-}
