@@ -1621,4 +1621,6 @@ module "access_logs_s3_bucket" {
 
   attach_elb_log_delivery_policy = var.enable_elb_log_delivery_policy # Required for ALB logs
   attach_lb_log_delivery_policy  = var.enable_lb_log_delivery_policy  # Required for ALB/NLB logs
+
+  tags = var.default_tags
 }
