@@ -478,6 +478,7 @@ This Terraform code is licensed under the Apache License
 
 | Name | Description |
 |------|-------------|
+| <a name="output_access_logs_s3_bucket_name"></a> [access\_logs\_s3\_bucket\_name](#output\_access\_logs\_s3\_bucket\_name) | S3 bucket name for access logs. |
 | <a name="output_database_url"></a> [database\_url](#output\_database\_url) | Endpoint address for the primary RDS database instance. |
 | <a name="output_ec2_instance_id"></a> [ec2\_instance\_id](#output\_ec2\_instance\_id) | EC2 instance ID. |
 | <a name="output_ec2_instance_public_dns_name"></a> [ec2\_instance\_public\_dns\_name](#output\_ec2\_instance\_public\_dns\_name) | EC2 instance public DNS name. |
