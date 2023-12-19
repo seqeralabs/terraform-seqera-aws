@@ -39,3 +39,8 @@ output "ec2_instance_public_dns_name" {
   value       = try(module.ec2_instance.public_dns, null)
   description = "EC2 instance public DNS name."
 }
+
+output "access_logs_s3_bucket_name" {
+  value       = try(module.access_logs_s3_bucket.s3_bucket_id, null)
+  description = "S3 bucket name for access logs."
+}
