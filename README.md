@@ -262,6 +262,7 @@ This Terraform code is licensed under the Apache License
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_access_logs_s3_bucket"></a> [access\_logs\_s3\_bucket](#module\_access\_logs\_s3\_bucket) | terraform-aws-modules/s3-bucket/aws | 3.15.1 |
 | <a name="module_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#module\_aws\_cluster\_autoscaler\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_aws_ebs_csi_driver_iam_policy"></a> [aws\_ebs\_csi\_driver\_iam\_policy](#module\_aws\_ebs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_aws_efs_csi_driver_iam_policy"></a> [aws\_efs\_csi\_driver\_iam\_policy](#module\_aws\_efs\_csi\_driver\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
@@ -274,14 +275,14 @@ This Terraform code is licensed under the Apache License
 | <a name="module_ec2_sg"></a> [ec2\_sg](#module\_ec2\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_ec2_ssh_rule"></a> [ec2\_ssh\_rule](#module\_ec2\_ssh\_rule) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_efs_sg"></a> [efs\_sg](#module\_efs\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
-| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.19.0 |
+| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 19.21.0 |
 | <a name="module_key_pair"></a> [key\_pair](#module\_key\_pair) | terraform-aws-modules/key-pair/aws | 2.0.2 |
 | <a name="module_redis"></a> [redis](#module\_redis) | cloudposse/elasticache-redis/aws | 0.52.0 |
 | <a name="module_redis_sg"></a> [redis\_sg](#module\_redis\_sg) | terraform-aws-modules/security-group/aws | 5.1.0 |
 | <a name="module_seqera_iam_policy"></a> [seqera\_iam\_policy](#module\_seqera\_iam\_policy) | terraform-aws-modules/iam/aws//modules/iam-policy | 5.30.0 |
 | <a name="module_seqera_irsa"></a> [seqera\_irsa](#module\_seqera\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | 5.30.0 |
 | <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
-| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 5.1.2 |
+| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 5.4.0 |
 | <a name="module_vpc_endpoints"></a> [vpc\_endpoints](#module\_vpc\_endpoints) | terraform-aws-modules/vpc/aws//modules/vpc-endpoints | ~> 5.0 |
 
 ## Resources
@@ -316,6 +317,9 @@ This Terraform code is licensed under the Apache License
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | The name of the Virtual Private Cloud (VPC) to be created. | `string` | n/a | yes |
+| <a name="input_access_logs_s3_bucket_acl_name"></a> [access\_logs\_s3\_bucket\_acl\_name](#input\_access\_logs\_s3\_bucket\_acl\_name) | The ACL for the S3 bucket for ELB access logs. | `string` | `"log-delivery-write"` | no |
+| <a name="input_access_logs_s3_bucket_name"></a> [access\_logs\_s3\_bucket\_name](#input\_access\_logs\_s3\_bucket\_name) | The name prefix of the S3 bucket for ELB access logs. | `string` | `"seqera-access-logs-"` | no |
+| <a name="input_access_logs_s3_bucket_object_ownership"></a> [access\_logs\_s3\_bucket\_object\_ownership](#input\_access\_logs\_s3\_bucket\_object\_ownership) | The ownership of the S3 bucket for ELB access logs. | `string` | `"ObjectWriter"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy"></a> [aws\_cluster\_autoscaler\_iam\_policy](#input\_aws\_cluster\_autoscaler\_iam\_policy) | IAM policy for the AWS Cluster Autoscaler | `string` | `"{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:DescribeAutoScalingGroups\",\n        \"autoscaling:DescribeAutoScalingInstances\",\n        \"autoscaling:DescribeLaunchConfigurations\",\n        \"autoscaling:DescribeScalingActivities\",\n        \"autoscaling:DescribeTags\",\n        \"ec2:DescribeInstanceTypes\",\n        \"ec2:DescribeLaunchTemplateVersions\"\n      ],\n      \"Resource\": [\"*\"]\n    },\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"autoscaling:SetDesiredCapacity\",\n        \"autoscaling:TerminateInstanceInAutoScalingGroup\",\n        \"ec2:DescribeImages\",\n        \"ec2:GetInstanceTypesFromInstanceRequirements\",\n        \"eks:DescribeNodegroup\"\n      ],\n      \"Resource\": [\"*\"]\n    }\n  ]\n}\n"` | no |
 | <a name="input_aws_cluster_autoscaler_iam_policy_name"></a> [aws\_cluster\_autoscaler\_iam\_policy\_name](#input\_aws\_cluster\_autoscaler\_iam\_policy\_name) | The name of the IAM policy for the AWS Cluster Autoscaler. | `string` | `"aws-cluster-autoscaler-iam-policy"` | no |
 | <a name="input_aws_cluster_autoscaler_version"></a> [aws\_cluster\_autoscaler\_version](#input\_aws\_cluster\_autoscaler\_version) | The version of the AWS Cluster Autoscaler to deploy. | `string` | `"9.29.3"` | no |
@@ -409,6 +413,7 @@ This Terraform code is licensed under the Apache License
 | <a name="input_eks_manage_aws_auth_configmap"></a> [eks\_manage\_aws\_auth\_configmap](#input\_eks\_manage\_aws\_auth\_configmap) | Determines whether to manage the aws-auth ConfigMap. | `bool` | `true` | no |
 | <a name="input_eks_managed_node_group_defaults_capacity_type"></a> [eks\_managed\_node\_group\_defaults\_capacity\_type](#input\_eks\_managed\_node\_group\_defaults\_capacity\_type) | The capacity type for the default managed node group. | `string` | `"ON_DEMAND"` | no |
 | <a name="input_eks_managed_node_group_defaults_instance_types"></a> [eks\_managed\_node\_group\_defaults\_instance\_types](#input\_eks\_managed\_node\_group\_defaults\_instance\_types) | A list of EC2 instance types for the default managed node group. | `list(string)` | <pre>[<br>  "m5a.2xlarge"<br>]</pre> | no |
+| <a name="input_enable_access_logs_s3_bucket"></a> [enable\_access\_logs\_s3\_bucket](#input\_enable\_access\_logs\_s3\_bucket) | Determines whether to create an S3 bucket for ELB access logs. | `bool` | `true` | no |
 | <a name="input_enable_aws_cluster_autoscaler"></a> [enable\_aws\_cluster\_autoscaler](#input\_enable\_aws\_cluster\_autoscaler) | Determines whether the AWS Cluster Autoscaler should be deployed. | `bool` | `false` | no |
 | <a name="input_enable_aws_ebs_csi_driver"></a> [enable\_aws\_ebs\_csi\_driver](#input\_enable\_aws\_ebs\_csi\_driver) | Determines whether the EBS CSI driver should be deployed. | `bool` | `false` | no |
 | <a name="input_enable_aws_efs_csi_driver"></a> [enable\_aws\_efs\_csi\_driver](#input\_enable\_aws\_efs\_csi\_driver) | Determines whether the AWS EFS CSI driver should be deployed. | `bool` | `false` | no |
@@ -419,6 +424,8 @@ This Terraform code is licensed under the Apache License
 | <a name="input_enable_ec2_instance_monitoring"></a> [enable\_ec2\_instance\_monitoring](#input\_enable\_ec2\_instance\_monitoring) | Determines whether detailed monitoring is enabled for the EC2 instance. | `bool` | `true` | no |
 | <a name="input_enable_ec2_instance_session_manager_access"></a> [enable\_ec2\_instance\_session\_manager\_access](#input\_enable\_ec2\_instance\_session\_manager\_access) | Determines whether SSM Session Manager access is enabled for the EC2 instance. | `bool` | `false` | no |
 | <a name="input_enable_ec2_instance_ssh_access"></a> [enable\_ec2\_instance\_ssh\_access](#input\_enable\_ec2\_instance\_ssh\_access) | Defines whether SSH access is enabled for the EC2 instance. | `bool` | `true` | no |
+| <a name="input_enable_elb_log_delivery_policy"></a> [enable\_elb\_log\_delivery\_policy](#input\_enable\_elb\_log\_delivery\_policy) | Determines whether to create a policy for ELB log delivery. | `bool` | `true` | no |
+| <a name="input_enable_lb_log_delivery_policy"></a> [enable\_lb\_log\_delivery\_policy](#input\_enable\_lb\_log\_delivery\_policy) | Determines whether to create a policy for LB log delivery. | `bool` | `true` | no |
 | <a name="input_enable_nat_gateway"></a> [enable\_nat\_gateway](#input\_enable\_nat\_gateway) | Determines whether NAT gateways should be provisioned. | `bool` | `true` | no |
 | <a name="input_enable_vpn_gateway"></a> [enable\_vpn\_gateway](#input\_enable\_vpn\_gateway) | Determines whether a VPN gateway should be provisioned. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the infrastructure is being deployed. | `string` | `""` | no |

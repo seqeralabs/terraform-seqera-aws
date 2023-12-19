@@ -1802,3 +1802,38 @@ variable "ec2_instance_profile_iam_policy" {
 EOF
 }
 
+variable "access_logs_s3_bucket_name" {
+  type        = string
+  default     = "seqera-access-logs-"
+  description = "The name prefix of the S3 bucket for ELB access logs."
+}
+
+variable "enable_elb_log_delivery_policy" {
+  type        = bool
+  default     = true
+  description = "Determines whether to create a policy for ELB log delivery."
+}
+
+variable "enable_lb_log_delivery_policy" {
+  type        = bool
+  default     = true
+  description = "Determines whether to create a policy for LB log delivery."
+}
+
+variable "enable_access_logs_s3_bucket" {
+  type        = bool
+  default     = true
+  description = "Determines whether to create an S3 bucket for ELB access logs."
+}
+
+variable "access_logs_s3_bucket_object_ownership" {
+  type        = string
+  default     = "ObjectWriter"
+  description = "The ownership of the S3 bucket for ELB access logs."
+}
+
+variable "access_logs_s3_bucket_acl_name" {
+  type        = string
+  default     = "log-delivery-write"
+  description = "The ACL for the S3 bucket for ELB access logs."
+}

@@ -1603,3 +1603,22 @@ module "ec2_instance" {
     module.vpc
   ]
 }
+
+module "access_logs_s3_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "3.15.1"
+
+  create_bucket = var.enable_access_logs_s3_bucket
+
+  bucket_prefix = var.access_logs_s3_bucket_name
+  acl           = var.access_logs_s3_bucket_acl_name
+
+  # Allow deletion of non-empty bucket
+  force_destroy = true
+
+  control_object_ownership = true
+  object_ownership         = var.access_logs_s3_bucket_object_ownership
+
+  attach_elb_log_delivery_policy = var.enable_elb_log_delivery_policy # Required for ALB logs
+  attach_lb_log_delivery_policy  = var.enable_lb_log_delivery_policy  # Required for ALB/NLB logs
+}
