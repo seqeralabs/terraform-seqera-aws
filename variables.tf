@@ -145,7 +145,7 @@ variable "eks_aws_auth_users" {
 ## Enable AWS Cluster Autoscaler
 variable "enable_aws_cluster_autoscaler" {
   type        = bool
-  default     = false
+  default     = true
   description = "Determines whether the AWS Cluster Autoscaler should be deployed."
 }
 
