@@ -273,60 +273,6 @@ locals {
   db_app_password  = try(var.db_app_password != "" ? var.db_app_password : random_password.db_app_password[0].result, "")
 }
 
-# This resource creates a kubernetes that will provision the Seqera user in the DB with the required permissions.
-resource "kubernetes_job_v1" "seqera_schema_job" {
-  count = var.create_db_cluster && var.create_db_cluster && var.create_eks_cluster ? 1 : 0
-  metadata {
-    name      = var.db_setup_job_name
-    namespace = var.seqera_namespace_name
-  }
-
-  spec {
-    backoff_limit = 1
-    template {
-      metadata {
-        name = var.db_setup_job_name
-      }
-
-      spec {
-        container {
-          name    = var.db_setup_job_name
-          image   = var.db_setup_job_image
-          command = ["mysql"]
-          args = [
-            "--host=${module.db[0].db_instance_address}",
-            "--user=${var.db_root_username}",
-            "--password=${local.db_root_password}",
-            "-e", <<-EOT
-              ALTER DATABASE ${var.db_app_schema_name} CHARACTER SET utf8 COLLATE utf8_bin;
-              CREATE USER IF NOT EXISTS ${var.db_app_username} IDENTIFIED BY "${local.db_app_password}";
-              GRANT ALL PRIVILEGES ON ${var.db_app_schema_name}.* TO ${var.db_app_username}@'%';
-            EOT
-          ]
-        }
-
-        restart_policy = "Never"
-
-        dns_config {
-          searches = ["kube-dns.kube-system.svc.cluster.local"]
-        }
-      }
-    }
-  }
-
-  wait_for_completion = true
-
-  timeouts {
-    create = "10m"
-    update = "5m"
-  }
-
-  depends_on = [
-    module.eks,
-    module.db
-  ]
-}
-
 # A Helm release resource for deploying the AWS cluster autoscaler using the Helm package manager.
 resource "helm_release" "aws_cluster_autoscaler" {
   count = var.enable_aws_cluster_autoscaler && var.create_eks_cluster ? 1 : 0
