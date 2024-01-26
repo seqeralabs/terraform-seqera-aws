@@ -1163,20 +1163,6 @@ variable "tower_app_configmap_name" {
   description = "The name of the configMap for the Tower app."
 }
 
-## Database setup job name
-variable "db_setup_job_name" {
-  type        = string
-  default     = "seqera-db-setup-job"
-  description = "The name of the database setup job."
-}
-
-## Database setup job image
-variable "db_setup_job_image" {
-  type        = string
-  default     = "mysql:8.0.35-debian"
-  description = "The image for the database setup job."
-}
-
 ## Database Port
 variable "db_port" {
   type        = string
