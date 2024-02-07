@@ -27,6 +27,7 @@ module "terraform-seqera-aws" {
   vpc_name = "my-seqera-tf-vpc"
 
   ## EKS
+  create_eks_cluster  = true
   cluster_name    = "my-seqera-tf-cluster"
   cluster_version = "1.27"
   eks_managed_node_group_defaults_instance_types = ["t3.medium"]
