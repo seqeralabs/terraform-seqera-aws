@@ -1,3 +1,8 @@
+> [!IMPORTANT]  
+> This project is no longer maintained.
+> We do not recommend using this as a base for any new installations.
+> If you are an active user of this project, please reach out to [Seqera Support](https://support.seqera.io) for guidance on migration options.
+
 # Terraform Seqera Infrastructure Deployment Module
 
 ## This Terraform code deploys infrastructure resources using the following modules:
